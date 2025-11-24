@@ -1,0 +1,190 @@
+<!-- FONDO OSCURO -->
+<div class="fixed inset-0 bg-black/40 z-40" (click)="cerrar()"></div>
+
+<!-- DRAWER -->
+<div class="fixed right-0 top-0 h-screen bg-white shadow-xl z-50 
+            w-full max-w-full md:max-w-[520px] overflow-y-auto">
+
+  <!-- HEADER FIJO -->
+  <div class="sticky top-0 bg-white z-50 flex items-center justify-between p-4 border-b">
+      <h2 class="text-lg font-semibold">Editar Reserva</h2>
+      <button class="close-btn" (click)="cerrar()">✕</button>
+  </div>
+
+  <!-- CONTENIDO DEL DRAWER -->
+  <div class="p-4 space-y-6 pb-20">
+
+
+
+
+    <!-- ============================
+         SECCIÓN EDITAR RESERVA
+    ============================= -->
+    <div class="section">
+      <div class="grid-2">
+        <div>
+          <label>Nombre</label>
+          <input [(ngModel)]="reservaEditable.nombre" name="nombre"/>
+        </div>
+        <div>
+          <label>Apellido</label>
+          <input [(ngModel)]="reservaEditable.apellido" name="apellido"/>
+        </div>
+      </div>
+
+      <div>
+        <label>Habitación</label>
+        <select 
+          class="form-select"
+          [(ngModel)]="reservaEditable.id_habitacion"
+          (ngModelChange)="onHabitacionChange($event)"
+          name="id_habitacion"
+        >
+          <option [ngValue]="h.id_habitacion" *ngFor="let h of habitaciones">
+            {{ h.numero_habitacion }} – {{ h.tipo }}
+          </option>
+        </select>
+
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>Check-in</label>
+          <input type="date" [(ngModel)]="reservaEditable.check_in" name="checkIn"/>
+        </div>
+        <div>
+          <label>Check-out</label>
+          <input type="date" [(ngModel)]="reservaEditable.check_out" name="checkOut"/>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label>Adultos</label>
+                <input type="number" [(ngModel)]="reservaEditable.adultos" name="adultos" (change)="recalcular()">
+            </div>
+
+            <div>
+                <label>Niños</label>
+                <input type="number" [(ngModel)]="reservaEditable.ninos" name="ninos" (change)="recalcular()">
+            </div>
+        </div>
+
+        <div>
+          <label>Tarifa por noche</label>
+          <input type="number" [(ngModel)]="reserva.tarifa_base" readonly class="bg-gray-100 cursor-not-allowed" name="tarifaBase"/>
+        </div>
+      </div>
+
+      <button class="btn-primary" (click)="guardarCambios()">Guardar Cambios</button>
+      <button class="btn-danger" (click)="cancelarReserva()">Cancelar reserva</button>
+
+      <div class="mt-4 flex flex-col md:flex-row gap-3" *ngIf="reservaEditable">
+  
+        <!-- Botón Check-In -->
+        <button 
+          *ngIf="puedeCheckIn()" 
+          class="btn btn-green w-full"
+          (click)="hacerCheckIn()">
+          Check-In
+        </button>
+
+        <!-- Botón Check-Out -->
+        <button 
+          *ngIf="puedeCheckOut()" 
+          class="btn btn-blue w-full"
+          (click)="hacerCheckOut()">
+          Check-Out
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- ============================
+         ESTADO DE CUENTA
+    ============================= -->
+    
+    <h3 class="section-title">Estado de Cuenta</h3>
+
+    <div class="overflow-x-auto">
+    <table class="min-w-full text-sm table-mov whitespace-nowrap">
+      <thead>
+        <tr class="border-b text-slate-500">
+          <th class="py-2 px-3 text-left">Tipo</th>
+          <th class="py-2 px-3 text-left">Descripción</th>
+          <th class="py-2 px-3 text-center">Monto</th>
+          <th class="py-2 px-3 text-left">Nota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of movimientos" class="border-b">
+          <td class="py-2 px-3">{{ m.tipo }}</td>
+          <td class="py-2 px-3">{{ m.descripcion }}</td>
+          <td [class.red]="m.tipo==='Cargo'" 
+              [class.green]="m.tipo==='Abono'">
+            {{ m.cantidad | currency:'MXN':'symbol':'1.0-2' }}
+          </td>
+          <td class="py-2 px-3">{{ m.nota }}</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- TOTALES -->
+    <div class="totales">
+      <p>Total Cargos: <b>{{ totalCargos | currency:'MXN' }}</b></p>
+      <p>Total Abonos: <b>{{ totalAbonos | currency:'MXN' }}</b></p>
+      <p class="saldo">
+        Saldo Calculado: 
+        <b [ngClass]="{'green': saldo <= 0, 'red': saldo > 0}">
+          {{ saldo | currency:'MXN' }}
+        </b>
+      </p>
+    </div>
+
+
+    <!-- ============================
+         REGISTRAR MOVIMIENTO
+    ============================= -->
+    <h3 class="section-title">Registrar Movimiento</h3>
+
+    <form class="section">
+
+      <div>
+        <label>Tipo</label>
+        <select [(ngModel)]="nuevoMovimiento.tipo" name="tipo">
+          <option value="Cargo">Cargo</option>
+          <option value="Abono">Abono</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Descripción del movimiento</label>
+        <select [(ngModel)]="nuevoMovimiento.id_concepto" name="concepto" (ngModelChange)="actualizarDescripcion()" required class="w-full border rounded-lg p-2">
+          <option value="" disabled selected>Selecciona un concepto</option>
+          <option *ngFor="let c of catalogo" [value]="c.id_concepto">
+            {{ c.nombre }} (MX$ {{ c.monto }})
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label>Monto</label>
+        <input type="number" [(ngModel)]="nuevoMovimiento.monto" name="monto"/>
+      </div>
+
+      <div>
+        <label>Nota (opcional)</label>
+        <textarea [(ngModel)]="nuevoMovimiento.nota" name="nota"></textarea>
+      </div>
+
+      <button type= "button" class="btn-primary" (click)="registrarMovimiento()">Registrar Movimiento</button>
+    </form>
+    <div class="h-10"></div>
+
+  </div>
+
+</div>
