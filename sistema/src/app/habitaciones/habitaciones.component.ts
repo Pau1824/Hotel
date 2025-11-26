@@ -58,7 +58,7 @@ export class HabitacionesComponent implements OnInit {
 
   this.habitacionesService.getHabitaciones().subscribe({
     next: (data) => {
-      console.log('Habitaciones desde API:', data);
+      console.log('Datos recibidos:', data);
 
       this.habitaciones = data.map((h: any) => ({
         id: h.id_habitacion,
@@ -72,6 +72,7 @@ export class HabitacionesComponent implements OnInit {
       }));
 
       this.cargando = false;
+      console.log('Habitaciones asignadas:', this.habitaciones);
     },
     error: (err) => {
       console.error('Error cargando habitaciones', err);

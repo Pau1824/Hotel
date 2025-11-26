@@ -94,7 +94,17 @@ router.get('/', authRequired, async (req, res) => {
               AND r.check_in <= CURRENT_DATE + INTERVAL '3 day'
           ) THEN 'Reservada'
           ELSE 'Disponible'
-        END AS estado
+        END AS estado,
+
+        -- HUESPED ACTUAL (si está ocupada)
+        (
+          SELECT CONCAT(r.nombre_huesped, ' ', r.apellido1_huesped)
+          FROM reservaciones r
+          WHERE r.id_habitacion = h.id_habitacion
+            AND r.estado = 'en_curso'
+            LIMIT 1
+        ) AS huesped
+
       FROM habitaciones h
       LEFT JOIN tipos_habitaciones t ON t.id_tipo = h.id_tipo
       ${scopeHotel ? 'WHERE h.id_hotel = $1' : ''}
