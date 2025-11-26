@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReservasService } from './reservas.service';
@@ -45,13 +45,13 @@ import { isPlatformBrowser } from '@angular/common';
       <!-- HABITACIÓN -->
       <div>
         <label class="label">Habitación</label>
-        <select class="input" [(ngModel)]="habitacionSeleccionada" (change)="actualizarTarifa()">
+        <select class="input" [ngModel]="habitacionSeleccionada()" (ngModelChange)="habitacionSeleccionada.set($event); actualizarTarifa()">
           <option [ngValue]="null">Seleccionar habitación</option>
-          <option *ngFor="let h of habitaciones" [ngValue]="h" [disabled]="h.estado === 'Mantenimiento' || h.estado === 'Reservada' || h.estado === 'Inactiva' || h.estado === 'Fuera de servicio'">
+          <option *ngFor="let h of habitaciones()" [ngValue]="h" [disabled]="h.estado === 'Mantenimiento' || h.estado === 'Reservada' || h.estado === 'Inactiva' || h.estado === 'Fuera de servicio'">
             Habitación {{ h.numero_habitacion }} — {{ h.tipo }} 
           </option>
         </select>
-        <p class="text-xs text-red-500 mt-1" *ngIf="habitacionSeleccionada?.estado !== 'Disponible'">
+        <p class="text-xs text-red-500 mt-1" *ngIf="habitacionSeleccionada()?.estado !== 'Disponible'">
           * Esta habitación no está disponible.
         </p>
       </div>
@@ -81,7 +81,7 @@ import { isPlatformBrowser } from '@angular/common';
           <div class="flex items-center gap-4">
             <button class="btn-circle" (click)="decrementarAdultos()" [disabled]="adultos <= 1">−</button>
             <span class="text-lg font-medium">{{ adultos }}</span>
-            <button class="btn-circle" (click)="incrementarAdultos()" [disabled]="adultos >= ((habitacionSeleccionada?.adultos_max || 0) + (habitacionSeleccionada?.adultos_extra_max || 0))">+</button>
+            <button class="btn-circle" (click)="incrementarAdultos()" [disabled]="adultos >= ((habitacionSeleccionada()?.adultos_max || 0) + (habitacionSeleccionada()?.adultos_extra_max || 0))">+</button>
           </div>
           <p *ngIf="adultos >= maxAdultosPermitidos" class="text-xs text-red-500 mt-1">
             Límite máximo: {{ maxAdultosPermitidos }} adultos.
@@ -94,7 +94,7 @@ import { isPlatformBrowser } from '@angular/common';
           <div class="flex items-center gap-4">
             <button class="btn-circle" (click)="decrementarNinos()" [disabled]="ninos <= 0">−</button>
             <span class="text-lg font-medium">{{ ninos }}</span>
-            <button class="btn-circle" (click)="incrementarNinos()" [disabled]="ninos >= ((habitacionSeleccionada?.ninos_max || 0) + (habitacionSeleccionada?.ninos_extra_max || 0))">+</button>
+            <button class="btn-circle" (click)="incrementarNinos()" [disabled]="ninos >= ((habitacionSeleccionada()?.ninos_max || 0) + (habitacionSeleccionada()?.ninos_extra_max || 0))">+</button>
           </div>
           <p *ngIf="ninos >= maxNinosPermitidos" class="text-xs text-red-500 mt-1">
             Límite máximo: {{ maxNinosPermitidos }} niños.
@@ -214,15 +214,15 @@ export class NuevaReservaComponent {
 ) {}
 
   // VARIABLES
-  folio = '';
+  folio = signal<string>('');
 
   today: string = new Date().toISOString().split('T')[0];
 
 
-  habitaciones: any[] = [];
+  habitaciones = signal<any[]>([]);
   habitacion: number | null = null;
 
-  habitacionSeleccionada: any = null;
+  habitacionSeleccionada = signal<any | null>(null);
 
   nombre = '';
   apellido = '';
@@ -249,13 +249,13 @@ export class NuevaReservaComponent {
   }
 
   get maxAdultosPermitidos(): number {
-    if (!this.habitacionSeleccionada) return 1;
-    return this.habitacionSeleccionada.adultos_max + this.habitacionSeleccionada.adultos_extra_max;
+    if (!this.habitacionSeleccionada()) return 1;
+    return this.habitacionSeleccionada()!.adultos_max + this.habitacionSeleccionada()!.adultos_extra_max;
   }
 
   get maxNinosPermitidos(): number {
-    if (!this.habitacionSeleccionada) return 0;
-    return this.habitacionSeleccionada.ninos_max + this.habitacionSeleccionada.ninos_extra_max;
+    if (!this.habitacionSeleccionada()) return 0;
+    return this.habitacionSeleccionada()!.ninos_max + this.habitacionSeleccionada()!.ninos_extra_max;
   }
 
   /*
@@ -320,20 +320,20 @@ get ninosExtra(): number {
 
     this.http.get<any[]>('http://localhost:5000/api/habitaciones').subscribe({
       next: (data) => {
-        this.habitaciones = data.map(h => ({
+        this.habitaciones.set(data.map(h => ({
           ...h,
           precio_adulto_extra: Number(h.precio_adulto_extra),
           precio_nino_extra: Number(h.precio_nino_extra),
           precio_cama_extra: Number(h.precio_cama_extra)
-        }));
+        })));
 
         console.log("Habitaciones cargadas (procesadas):", this.habitaciones);
 
         // ⭐ 4. Si venimos desde /habitaciones, auto-seleccionamos
         if (numeroHab) {
-          const hab = this.habitaciones.find(h => h.numero_habitacion == numeroHab);
+          const hab = this.habitaciones().find((h:any) => h.numero_habitacion == numeroHab);
           if (hab) {
-            this.habitacionSeleccionada = hab;
+            this.habitacionSeleccionada.set(hab);
             this.actualizarTarifa(); // opcional, si quieres actualizar la tarifa instantáneamente
           }
         }
@@ -347,7 +347,7 @@ get ninosExtra(): number {
   cargarHabitaciones() {
     this.http.get<any[]>('http://localhost:5000/api/habitaciones').subscribe({
       next: (data) => {
-        this.habitaciones = data;
+        this.habitaciones.set(data);
       },
       error: (err) => {
         console.error("Error cargando habitaciones:", err);
@@ -359,7 +359,7 @@ get ninosExtra(): number {
     console.log("actualizarTarifa() disparado");
     console.log("habitacionSeleccionada:", this.habitacionSeleccionada);
 
-    if (!this.habitacionSeleccionada) {
+    if (!this.habitacionSeleccionada()) {
       console.warn("⚠ No hay habitación seleccionada");
       this.tarifa = 0;
       this.camasExtra = 0;
@@ -369,16 +369,16 @@ get ninosExtra(): number {
       return;
     }
 
-    const id = this.habitacionSeleccionada.id_habitacion;
+    const id = this.habitacionSeleccionada().id_habitacion;
     console.log("➡ Id seleccionado:", id);
 
     // 🔹 Tarifa base que ya usas
-    this.tarifa = Number(this.habitacionSeleccionada.tarifa_base || 0);
+    this.tarifa = Number(this.habitacionSeleccionada().tarifa_base || 0);
 
     // 🔹 NUEVO: datos para camas extra desde la BD
     this.camasExtra = 0; // reset cada que cambias de habitación
-    this.camasExtraMax = Number(this.habitacionSeleccionada.camas_extra_max || 0);
-    this.precioCamaExtra = Number(this.habitacionSeleccionada.precio_cama_extra || 0);
+    this.camasExtraMax = Number(this.habitacionSeleccionada().camas_extra_max || 0);
+    this.precioCamaExtra = Number(this.habitacionSeleccionada().precio_cama_extra || 0);
 
     console.log("camasExtraMax:", this.camasExtraMax);
     console.log("precioCamaExtra:", this.precioCamaExtra);
@@ -433,8 +433,8 @@ get ninosExtra(): number {
   get adultosExtra(): number {
     if (!this.habitacionSeleccionada) return 0;
 
-    const gratis = Number(this.habitacionSeleccionada.adultos_max);
-    const extraMax = Number(this.habitacionSeleccionada.adultos_extra_max);
+    const gratis = Number(this.habitacionSeleccionada().adultos_max);
+    const extraMax = Number(this.habitacionSeleccionada().adultos_extra_max);
 
     const exceso = this.adultos - gratis;
 
@@ -446,7 +446,7 @@ get ninosExtra(): number {
   get cargoAdultosExtra(): number {
     if (!this.habitacionSeleccionada) return 0;
 
-    const precio = Number(this.habitacionSeleccionada.precio_adulto_extra || 0);
+    const precio = Number(this.habitacionSeleccionada().precio_adulto_extra || 0);
 
     return this.adultosExtra * precio * this.noches;
   }
@@ -454,8 +454,8 @@ get ninosExtra(): number {
   get ninosExtra(): number {
     if (!this.habitacionSeleccionada) return 0;
 
-    const gratis = Number(this.habitacionSeleccionada.ninos_max);
-    const extraMax = Number(this.habitacionSeleccionada.ninos_extra_max);
+    const gratis = Number(this.habitacionSeleccionada().ninos_max);
+    const extraMax = Number(this.habitacionSeleccionada().ninos_extra_max);
 
     const exceso = this.ninos - gratis;
 
@@ -467,7 +467,7 @@ get ninosExtra(): number {
   get cargoNinosExtra(): number {
     if (!this.habitacionSeleccionada) return 0;
 
-    const precio = Number(this.habitacionSeleccionada.precio_nino_extra || 0);
+    const precio = Number(this.habitacionSeleccionada().precio_nino_extra || 0);
 
     return this.ninosExtra * precio * this.noches;
   }
@@ -535,7 +535,7 @@ validarFechas(): string | null {
 }
 
 validarCapacidad(): string | null {
-  const h = this.habitacionSeleccionada;
+  const h = this.habitacionSeleccionada();
   if (!h) return "Seleccione una habitación.";
 
   const adultos = this.adultos;
@@ -551,7 +551,7 @@ validarCapacidad(): string | null {
 }
 
 validarCamasExtra(): string | null {
-  const h = this.habitacionSeleccionada;
+  const h = this.habitacionSeleccionada();
   if (!h) return null;
 
   if (this.camasExtra > h.camas_extra_max) {
@@ -564,7 +564,7 @@ validarCamasExtra(): string | null {
 
 
   guardarReserva() {
-    console.log("🟦 guardarReserva() disparado");
+    console.log("guardarReserva() disparado");
 
     const v1 = this.validarFechas();
     if (v1) { alert(v1); return; }
@@ -594,7 +594,7 @@ validarCamasExtra(): string | null {
     // -----------------------------
     // OBTENER EL NÚMERO DE HABITACIÓN REAL
     // -----------------------------
-    const id_habitacion = this.habitacionSeleccionada.id_habitacion;
+    const id_habitacion = this.habitacionSeleccionada().id_habitacion;
 
     // Calcular cargo extra total (camas + otros extras si tienes)
     const cargoCamasExtra = this.cargoCamasExtra;
@@ -616,7 +616,7 @@ validarCamasExtra(): string | null {
     // ARMAR EL PAYLOAD FINAL
     // -----------------------------
     const payload = {
-      id_habitacion: this.habitacionSeleccionada.id_habitacion,
+      id_habitacion: this.habitacionSeleccionada().id_habitacion,
       llegada: this.checkIn,                 // formato YYYY-MM-DD
       salida: this.checkOut,
       folio: this.folio,
