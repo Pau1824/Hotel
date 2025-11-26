@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import {
   CommonModule,
   NgIf, 
@@ -9,6 +9,7 @@ import {
 } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { HabitacionesService } from './habitaciones.service';
+import { Router } from '@angular/router';
 
 
 interface HabitacionApi {
@@ -42,42 +43,43 @@ interface HabitacionCard {
   styleUrls: ['./habitaciones.component.css'],
 })
 export class HabitacionesComponent implements OnInit {
-  habitaciones: HabitacionCard[] = [];
-  cargando = false;
-  error = '';
+  cargando = signal(true);
+  error = signal('');
+  habitaciones = signal<HabitacionCard[]>([]);
 
-  constructor(private habitacionesService: HabitacionesService) {}
+  constructor(private habitacionesService: HabitacionesService, private router: Router) {}
 
   ngOnInit(): void {
     this.cargarHabitaciones();
   }
 
   cargarHabitaciones() {
-  this.cargando = true;
-  this.error = '';
+  this.cargando.set(true);
+  this.error.set('');
 
   this.habitacionesService.getHabitaciones().subscribe({
     next: (data) => {
       console.log('Datos recibidos:', data);
 
-      this.habitaciones = data.map((h: any) => ({
+      const parsed = data.map((h: any) => ({
         id: h.id_habitacion,
         numero: h.numero,
         tipo: h.tipo,
         tarifa: Number(h.tarifa_base),
         adultosMax: h.adultos_max,
         ninosMax: h.ninos_max,
-        estado: h.estado,
+        estado: h.estado.toLowerCase(),
         huesped: h.huesped ?? null,
       }));
 
-      this.cargando = false;
+      this.habitaciones.set(parsed);
+      this.cargando.set(false);
       console.log('Habitaciones asignadas:', this.habitaciones);
     },
     error: (err) => {
       console.error('Error cargando habitaciones', err);
-      this.error = 'No se pudieron cargar las habitaciones.';
-      this.cargando = false;
+      this.error.set('No se pudieron cargar las habitaciones.');
+      this.cargando.set(false);
     },
   });
 }
@@ -114,4 +116,14 @@ export class HabitacionesComponent implements OnInit {
   puedeReservar(h: HabitacionCard) {
     return h.estado === 'disponible';
   }
+
+  reservar(h: HabitacionCard) {
+    this.router.navigate(['/reservas/nueva'], {
+        queryParams: {
+        habitacion: h.numero   // puedes usar id si prefieres
+        }
+    });
+    }
+
+
 }

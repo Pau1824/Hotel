@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReservasService } from './reservas.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { PLATFORM_ID} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
@@ -209,6 +209,10 @@ export class NuevaReservaComponent {
   platformId = inject(PLATFORM_ID);
 
 
+  constructor(
+  private route: ActivatedRoute
+) {}
+
   // VARIABLES
   folio = '';
 
@@ -309,22 +313,34 @@ get ninosExtra(): number {
 
 
   ngOnInit() {
+    // 1. Leer el número de habitación enviado en la URL
+    const numeroHab = this.route.snapshot.queryParamMap.get('habitacion');
+
     this.obtenerFolio();
 
-  this.http.get<any[]>('http://localhost:5000/api/habitaciones').subscribe({
-    next: (data) => {
-      this.habitaciones = data.map(h => ({
-        ...h,
-        precio_adulto_extra: Number(h.precio_adulto_extra),
-        precio_nino_extra: Number(h.precio_nino_extra),
-        precio_cama_extra: Number(h.precio_cama_extra)
-      }));
+    this.http.get<any[]>('http://localhost:5000/api/habitaciones').subscribe({
+      next: (data) => {
+        this.habitaciones = data.map(h => ({
+          ...h,
+          precio_adulto_extra: Number(h.precio_adulto_extra),
+          precio_nino_extra: Number(h.precio_nino_extra),
+          precio_cama_extra: Number(h.precio_cama_extra)
+        }));
 
-      console.log("Habitaciones cargadas (procesadas):", this.habitaciones);
-    },
-    error: (err) => console.error("Error cargando habitaciones:", err)
-  });
-}
+        console.log("Habitaciones cargadas (procesadas):", this.habitaciones);
+
+        // ⭐ 4. Si venimos desde /habitaciones, auto-seleccionamos
+        if (numeroHab) {
+          const hab = this.habitaciones.find(h => h.numero_habitacion == numeroHab);
+          if (hab) {
+            this.habitacionSeleccionada = hab;
+            this.actualizarTarifa(); // opcional, si quieres actualizar la tarifa instantáneamente
+          }
+        }
+      },
+      error: (err) => console.error("Error cargando habitaciones:", err)
+    });
+  }
 
 
 
@@ -580,7 +596,7 @@ validarCamasExtra(): string | null {
     // -----------------------------
     const id_habitacion = this.habitacionSeleccionada.id_habitacion;
 
-    // 🔹 Calcular cargo extra total (camas + otros extras si tienes)
+    // Calcular cargo extra total (camas + otros extras si tienes)
     const cargoCamasExtra = this.cargoCamasExtra;
 
     // Si ya manejas adultos/ninos extra, súmalos también aquí:
