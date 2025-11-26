@@ -393,13 +393,16 @@ router.post('/', authRequired, async (req, res) => {
       });
     }
 
-    const totalCamas = (r.camas_extra || 0) * hab.precio_cama_extra * noches;
+    //const totalCamas = (r.camas_extra || 0) * hab.precio_cama_extra * noches;
 
     /* =========================================
        7. Calcular total
        ========================================= */
-    const tarifa = Number(hab.tarifa_base);
-    const total = tarifa * noches + totalCamas;
+    const tarifa = Number(r.tarifa_por_noche);
+    const totalCamas = Number(r.total_camas_extra || 0);
+    const total = Number(r.total_pagar || 0);
+
+    console.log("🟩 Usando total del FRONT:", total);
 
     /* =========================================
        8. Insertar reserva
@@ -960,13 +963,15 @@ router.put('/:id', authRequired, async (req, res) => {
         h.numero_habitacion,
         -- si tienes columna de estado / mantenimiento, ponla aquí:
         h.estado,
-        t.precio_base,
+        h.tarifa_base,
         t.adultos_max,
         t.ninos_max,
         t.adultos_extra_max,
         t.ninos_extra_max,
         t.precio_adulto_extra,
-        t.precio_nino_extra
+        t.precio_nino_extra,
+        t.camas_extra_max,
+        t.precio_cama_extra
       FROM habitaciones h
       JOIN tipos_habitaciones t ON h.id_tipo = t.id_tipo
       WHERE h.id_habitacion = $1
@@ -979,6 +984,21 @@ router.put('/:id', authRequired, async (req, res) => {
     }
 
     const hab = habRows[0];
+
+
+    // Traer la reserva actual
+    const { rows: rsvRows } = await pool.query(`
+      SELECT camas_extra 
+      FROM reservaciones 
+      WHERE id_reservacion = $1
+    `, [id]);
+
+    if (!rsvRows.length) {
+      return res.status(404).json({ error: "Reserva no encontrada." });
+    }
+
+    const reservaActual = rsvRows[0];
+
 
      const estadosNoReservables = [
       "mantenimiento",
@@ -1013,6 +1033,11 @@ router.put('/:id', authRequired, async (req, res) => {
     }
 
 
+    const camasExtra =
+      r.camas_extra !== undefined && r.camas_extra !== null
+        ? Number(r.camas_extra)
+        : Number(reservaActual.camas_extra ?? 0);
+
     // ====================================
     // 4) VALIDAR CAPACIDAD (CON EXTRAS)
     // ====================================
@@ -1037,25 +1062,45 @@ router.put('/:id', authRequired, async (req, res) => {
       });
     }
 
+    if (camasExtra > hab.camas_extra_max) {
+      return res.status(400).json({ error: `Máximo ${hab.camas_extra_max} camas extra.` });
+    }
+
     const adultosExtra = Math.max(0, adultos - maxAdultosNormales);
     const ninosExtra   = Math.max(0, ninos   - maxNinosNormales);
 
     // =======================================
     // 5) CÁLCULO DE PRECIOS (POR NOCHE + IVA)
     // =======================================
-    const precioBaseNoche       = Number(hab.precio_base ?? 0);
+    const precioBaseNoche       = Number(hab.tarifa_base ?? 0);
     const precioAdultoExtraNoc  = Number(hab.precio_adulto_extra ?? 0);
     const precioNinoExtraNoc    = Number(hab.precio_nino_extra ?? 0);
+    const precioCamaExtraNoc    = Number(hab.precio_cama_extra ?? 0);
 
     const rentaBase   = precioBaseNoche * noches;
     const cargoAdultosExtra = adultosExtra * precioAdultoExtraNoc * noches;
     const cargoNinosExtra   = ninosExtra   * precioNinoExtraNoc   * noches;
+    const cargoCamasExtra   = camasExtra   * precioCamaExtraNoc   * noches;
 
-    const subtotal = rentaBase + cargoAdultosExtra + cargoNinosExtra;
+    const subtotal = rentaBase + cargoAdultosExtra + cargoNinosExtra + cargoCamasExtra;
 
     const IVA_RATE = 0.16; // si usas 19% cámbialo a 0.19
     const iva   = Number((subtotal * IVA_RATE).toFixed(2));
     const total = Number((subtotal + iva).toFixed(2));
+
+    console.log('💰 CÁLCULOS REAGENDAR:', {
+      noches,
+      adultos,
+      ninos,
+      camasExtra,
+      rentaBase,
+      cargoAdultosExtra,
+      cargoNinosExtra,
+      cargoCamasExtra,
+      subtotal,
+      iva,
+      total,
+    });
 
     // ==========================
     // 6) ACTUALIZAR RESERVACIÓN
@@ -1071,8 +1116,10 @@ router.put('/:id', authRequired, async (req, res) => {
         ninos             = $6,
         id_habitacion     = $7,
         tarifa_por_noche  = $8,
-        total_pagar       = $9
-      WHERE id_reservacion = $10
+        total_pagar       = $9,
+        camas_extra        = $10,
+        total_camas_extra  = $11
+      WHERE id_reservacion = $12
       `,
       [
         r.nombre,
@@ -1084,6 +1131,8 @@ router.put('/:id', authRequired, async (req, res) => {
         r.id_habitacion,
         precioBaseNoche,
         total,
+        camasExtra,
+        cargoCamasExtra,
         id,
       ]
     );

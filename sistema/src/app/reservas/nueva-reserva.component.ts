@@ -48,7 +48,7 @@ import { isPlatformBrowser } from '@angular/common';
         <select class="input" [ngModel]="habitacionSeleccionada()" (ngModelChange)="habitacionSeleccionada.set($event); actualizarTarifa()">
           <option [ngValue]="null">Seleccionar habitación</option>
           <option *ngFor="let h of habitaciones()" [ngValue]="h" [disabled]="h.estado === 'Mantenimiento' || h.estado === 'Reservada' || h.estado === 'Inactiva' || h.estado === 'Fuera de servicio'">
-            Habitación {{ h.numero_habitacion }} — {{ h.tipo }} 
+            Habitación {{ h.numero }} — {{ h.tipo }} 
           </option>
         </select>
         <p class="text-xs text-red-500 mt-1" *ngIf="habitacionSeleccionada()?.estado !== 'Disponible'">
@@ -314,12 +314,14 @@ get ninosExtra(): number {
 
   ngOnInit() {
     // 1. Leer el número de habitación enviado en la URL
-    const numeroHab = this.route.snapshot.queryParamMap.get('habitacion');
+    const numeroHab = Number(this.route.snapshot.queryParamMap.get('habitacion'));
+    console.log("🏨 Param habitacion recibido:", numeroHab);
 
     this.obtenerFolio();
 
     this.http.get<any[]>('http://localhost:5000/api/habitaciones').subscribe({
       next: (data) => {
+        console.log("🔍 OBJETOS HAB:", data);
         this.habitaciones.set(data.map(h => ({
           ...h,
           precio_adulto_extra: Number(h.precio_adulto_extra),
@@ -329,9 +331,10 @@ get ninosExtra(): number {
 
         console.log("Habitaciones cargadas (procesadas):", this.habitaciones);
 
-        // ⭐ 4. Si venimos desde /habitaciones, auto-seleccionamos
+        // 4. Si venimos desde /habitaciones, auto-seleccionamos
         if (numeroHab) {
-          const hab = this.habitaciones().find((h:any) => h.numero_habitacion == numeroHab);
+          const hab = this.habitaciones().find((h:any) => Number(h.numero) == numeroHab);
+          console.log("🏨 Hab encontrada:", hab);
           if (hab) {
             this.habitacionSeleccionada.set(hab);
             this.actualizarTarifa(); // opcional, si quieres actualizar la tarifa instantáneamente
@@ -612,6 +615,8 @@ validarCamasExtra(): string | null {
       return;
     }
 
+    this.calcularTotales();
+
     // -----------------------------
     // ARMAR EL PAYLOAD FINAL
     // -----------------------------
@@ -627,7 +632,9 @@ validarCamasExtra(): string | null {
       ninos: this.ninos,                     // opcional, depende tu backend
       camas_extra: this.camasExtra,
       total_camas_extra: this.cargoCamasExtra,
-      metodo_pago: this.metodoPago || "efectivo"
+      metodo_pago: this.metodoPago || "efectivo",
+      tarifa_por_noche: this.tarifa,
+      total_pagar: this.total
     };
 
     console.log("Payload final que se enviará al backend:", payload);
