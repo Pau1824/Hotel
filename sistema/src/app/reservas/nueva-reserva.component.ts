@@ -32,13 +32,13 @@ import { isPlatformBrowser } from '@angular/common';
         <div>
           <label class="label">Nombre</label>
           <input class="input" [(ngModel)]="nombre" placeholder="Nombre del huésped" />
-          <p *ngIf="!nombre" class="text-xs text-red-500 mt-1">* Requerido</p>
+          <p *ngIf="nombre && !nombreRegex.test(nombre)" class="text-xs text-red-500 mt-1">* Requerido</p>
         </div>
 
         <div>
           <label class="label">Apellido</label>
           <input class="input" [(ngModel)]="apellido" placeholder="Apellido del huésped" />
-          <p *ngIf="!apellido" class="text-xs text-red-500 mt-1">* Requerido</p>
+          <p *ngIf="apellido && !nombreRegex.test(apellido)" class="text-xs text-red-500 mt-1">* Requerido</p>
         </div>
       </div>
 
@@ -223,6 +223,8 @@ export class NuevaReservaComponent {
   habitacion: number | null = null;
 
   habitacionSeleccionada = signal<any | null>(null);
+
+  nombreRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/;
 
   nombre = '';
   apellido = '';
@@ -523,18 +525,20 @@ validarFechas(): string | null {
 
   if (!llegada || !salida) return "Debe seleccionar fechas válidas.";
 
-  const inDate  = new Date(llegada);
-  const outDate = new Date(salida);
-
-  inDate.setHours(0,0,0,0);
-  outDate.setHours(0,0,0,0);
-
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const inDate = this.toLocalDate(this.checkIn);
+  const outDate = this.toLocalDate(this.checkOut);
+  const hoy    = this.toLocalDate(this.today);
 
   if (inDate < hoy) return "La fecha de llegada no puede ser antes de hoy.";
   if (outDate <= inDate) return "El check-out debe ser posterior al check-in.";
 
   return null;
+}
+
+// Función que convierte un YYYY-MM-DD a un date plano sin timezone
+private toLocalDate(str: string): Date {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
 }
 
 validarCapacidad(): string | null {
@@ -616,6 +620,16 @@ validarCamasExtra(): string | null {
     }
 
     this.calcularTotales();
+
+    if (!this.nombreRegex.test(this.nombre)) {
+      alert("El nombre solo puede contener letras.");
+      return;
+    }
+
+    if (!this.nombreRegex.test(this.apellido)) {
+      alert("El apellido solo puede contener letras.");
+      return;
+    }
 
     // -----------------------------
     // ARMAR EL PAYLOAD FINAL

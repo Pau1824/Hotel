@@ -108,3 +108,11 @@ input, select, textarea {
 .totales b {
   font-size: 18px;
 }
+
+.swal2-aesthetic {
+  border-radius: 18px !important;
+  padding: 14px 18px !important;
+  box-shadow: 0px 8px 28px rgba(0,0,0,0.12) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  border: 1px solid rgba(0, 166, 166, 0.25) !important;
+}

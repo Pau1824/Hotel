@@ -934,8 +934,8 @@ router.put('/:id', authRequired, async (req, res) => {
       return res.status(400).json({ error: 'Debe haber al menos 1 huésped en la reserva' });
     }
 
-    const llegada = new Date(r.llegada);
-    const salida  = new Date(r.salida);
+    const llegada = new Date(`${r.llegada}T00:00:00`);
+    const salida  = new Date(`${r.salida}T00:00:00`);
 
     if (isNaN(llegada.getTime()) || isNaN(salida.getTime())) {
       return res.status(400).json({ error: 'Fechas inválidas' });
@@ -1202,6 +1202,7 @@ router.put('/:id', authRequired, async (req, res) => {
       cargos_detalle: {
         cargoAdultosExtra,
         cargoNinosExtra,
+        cargoCamasExtra,
         subtotal,
         iva,
         total,

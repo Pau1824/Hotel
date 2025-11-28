@@ -79,10 +79,9 @@ interface Reserva {
         [movimientos]="movimientos"
         [catalogo]="catalogo"
         (onCerrar)="cerrarDetalle()"
-        (onGuardarCambios)="guardarCambiosEnReserva($event)"
         (onCancelarReserva)="cancelarReserva()"
         (onRegistrarMovimiento)="registrarMovimiento($event)"
-        (onCambiosGuardados)="refrescarDetalle()"
+        (cambiosGuardados)="onCambiosReserva($event)"
       ></app-reserva-detalle>
 
 
@@ -112,14 +111,14 @@ export class ReservasComponent implements OnInit {
 
 
   ngOnInit() {
-  this.cargarReservas();
+    this.cargarReservas();
 
-  this.router.events.subscribe(e => {
-    if (e instanceof NavigationEnd && e.url === '/reservas') {
-      this.cargarReservas();  // recarga siempre
-    }
-  });
-}
+    this.router.events.subscribe(e => {
+      if (e instanceof NavigationEnd && e.url === '/reservas') {
+        this.cargarReservas();  // recarga siempre
+      }
+    });
+  }
 
   cargarReservas() {
   this.http.get<any[]>('http://localhost:5000/api/reservas').subscribe({
@@ -224,6 +223,37 @@ cerrarDetalle() {
   this.movimientos = [];
 }
 
+onCambiosReserva(actualizada: any) {
+  if (!actualizada) return;
+
+  console.log('🟣 cambiosGuardados recibido en el padre:', actualizada);
+
+  this.reservas = this.reservas.map(r =>
+    r.id_reservacion === actualizada.id_reservacion
+      ? {
+          ...r,
+          // nombres que usa tu template
+          nombre:   actualizada.nombre_huesped ?? r.nombre,
+          apellido1: actualizada.apellido1_huesped ?? r.apellido1,
+          // si manejas apellido2, lo puedes dejar igual
+          total:    actualizada.total_pagar ?? r.total,
+          // si quieres también actualizar fechas / adultos / niños:
+          llegada:  actualizada.check_in ?? r.llegada,
+          salida:   actualizada.check_out ?? r.salida,
+          adultos:  actualizada.adultos ?? r.adultos,
+          ninos:    actualizada.ninos ?? r.ninos,
+          id_habitacion: actualizada.id_habitacion ?? r.id_habitacion,
+          estado: actualizada.estado ?? r.estado,
+        }
+      : r
+  );
+
+  this.cerrarDetalle();
+}
+
+
+
+
 
 cargarHabitaciones() {
   this.http.get<any[]>('http://localhost:5000/api/habitaciones')
@@ -233,7 +263,7 @@ cargarHabitaciones() {
     });
 }
 
-
+/*
 guardarCambiosEnReserva(reservaEditada: any) {
   this.reservasService.actualizarReserva(reservaEditada.id, reservaEditada).subscribe({
     next: () => {
@@ -247,7 +277,7 @@ guardarCambiosEnReserva(reservaEditada: any) {
       console.error("Error actualizando reserva:", err);
     }
   });
-}
+}*/
 
 checkIn(reserva: any) {
   if (!confirm("¿Confirmar Check-In?")) return;
@@ -330,3 +360,4 @@ refrescarDetalle() {
     this.router.navigateByUrl('/reservas/nueva');
   }
 }
+

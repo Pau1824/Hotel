@@ -3,6 +3,7 @@ import { CommonModule, NgClass, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReservasService } from './reservas.service';
 import { HttpClient } from '@angular/common/http';
+import Swal from 'sweetalert2';
 
 
 @Component({
@@ -30,12 +31,17 @@ export class ReservaDetalleComponent {
   @Output() onGuardarCambios = new EventEmitter<any>();
   @Output() onCancelarReserva = new EventEmitter<void>();
   @Output() onRegistrarMovimiento = new EventEmitter<any>();
-  @Output() cambiosGuardados = new EventEmitter<void>();
+  @Output() cambiosGuardados = new EventEmitter<any>();
 
 
   reservaEditable: any = {}; // <- copia temporal segura
 
   drawerAbierto = true;
+
+  soloLetras = /^[A-Za-zÁÉÍÓÚÑáéíóúñ\s]+$/;
+  nombre: string = '';
+  apellido: string = '';
+  today: string = this.getLocalToday();
 
 
   // ========= NUEVO MOVIMIENTO =========
@@ -110,6 +116,64 @@ export class ReservaDetalleComponent {
   }
 
 
+  private toastAccion(icon: 'success' | 'info' | 'warning' | 'error', title: string, text: string) {
+    Swal.fire({
+      icon,
+      title,
+      html: `<p style="margin:4px 0; font-size:13px; color:#4b5563;">${text}</p>`,
+      confirmButtonText: 'Cerrar',
+      confirmButtonColor: '#0f766e',
+      background: '#ffffff',
+      color: '#0f172a',
+      customClass: {
+        popup: 'rounded-2xl shadow-lg',
+        title: 'text-lg font-semibold',
+      }
+    });
+  }
+
+
+  private mostrarSaldoPendiente() {
+    const saldo = Math.abs(this.saldo).toLocaleString('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      minimumFractionDigits: 2
+    });
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'Saldo pendiente',
+      html: `
+        <div style="text-align:left; font-size:13px; color:#4b5563;">
+          <p style="margin:0 0 6px;">
+            Esta reserva todavía tiene un saldo <b>pendiente por pagar</b>.
+          </p>
+          <p style="margin:0 0 4px; font-size:12px;">
+            Saldo actual: 
+            <span style="color:#0f766e; font-weight:600;">
+              ${saldo}
+            </span>
+          </p>
+          <p style="margin:8px 0 0; font-size:12px; color:#6b7280;">
+            Registra el pago en el estado de cuenta antes de hacer el check-out.
+          </p>
+        </div>
+      `,
+      showCancelButton: false,
+      confirmButtonText: 'Ir al estado de cuenta',
+      confirmButtonColor: '#0f766e',
+      background: '#f9fafb',
+      color: '#0f172a',
+      customClass: {
+        popup: 'rounded-2xl shadow-lg',
+        title: 'text-lg font-semibold',
+      }
+    });
+  }
+
+
+
+
 
 
 
@@ -137,6 +201,21 @@ export class ReservaDetalleComponent {
     return this.totalAbonos - this.totalCargos;
   }
 
+  private toLocalDate(str: string): Date {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0);
+  }
+
+  private getLocalToday(): string {
+    const d = new Date();
+    d.setHours(0,0,0,0); // evitar saltos por zona horaria
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+
 
   // =============================
   //  VALIDACIONES (MISMAS QUE NUEVA RESERVA)
@@ -146,9 +225,9 @@ export class ReservaDetalleComponent {
     const salida = this.reservaEditable.check_out;
     if (!llegada || !salida) return 'Debe seleccionar fechas válidas.';
 
-    const inDate = new Date(llegada);
-    const outDate = new Date(salida);
-    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const inDate  = this.toLocalDate(llegada);
+    const outDate = this.toLocalDate(salida);
+    const hoy     = this.toLocalDate(this.today);
 
     if (inDate < hoy) return 'La fecha de llegada no puede ser antes de hoy.';
     if (outDate <= inDate) return 'El check-out debe ser posterior al check-in.';
@@ -238,8 +317,34 @@ export class ReservaDetalleComponent {
 
 private toDateInput(fecha: string | null): string {
   if (!fecha) return '';
-  return fecha.split('T')[0]; // ISO → YYYY-MM-DD
+
+  // Ya viene en ISO → lo dejamos
+  if (fecha.includes('-')) return fecha;
+
+  // Convertir de DD/MM/YYYY → YYYY-MM-DD
+  const partes = fecha.split('/');
+  if (partes.length === 3) {
+    const [d, m, y] = partes;
+    return `${y}-${m}-${d}`;
+  }
+
+  return '';
 }
+
+onFechaChange() {
+  // Normaliza ambas fechas a formato YYYY-MM-DD
+  this.reservaEditable.check_in  = this.toDateInput(this.reservaEditable.check_in);
+  this.reservaEditable.check_out = this.toDateInput(this.reservaEditable.check_out);
+
+  // Lanza el recálculo después de limpiar formato
+  this.recalcular();
+}
+
+private toDateOnly(str: string): string {
+  if (!str) return '';
+  return str.split('T')[0];  // garantiza YYYY-MM-DD limpio
+}
+
 
   
 
@@ -255,6 +360,16 @@ private toDateInput(fecha: string | null): string {
     return;
   }
 
+  if (!this.soloLetras.test(this.reservaEditable.nombre.trim())) {
+    alert("El nombre solo puede contener letras.");
+    return;
+  }
+
+  if (!this.soloLetras.test(this.reservaEditable.apellido.trim())) {
+    alert("El apellido solo puede contener letras.");
+    return;
+  }
+
 
   const id = this.reservaEditable.id_reservacion ?? this.reservaEditable.id;
 
@@ -262,8 +377,8 @@ private toDateInput(fecha: string | null): string {
     id_reservacion: this.reservaEditable.id,
     nombre: this.reservaEditable.nombre,
     apellido: this.reservaEditable.apellido,
-    llegada: this.toIso(this.reservaEditable.check_in),
-    salida: this.toIso(this.reservaEditable.check_out),
+    llegada: this.toDateOnly(this.reservaEditable.check_in),
+    salida: this.toDateOnly(this.reservaEditable.check_out),
     adultos: this.reservaEditable.adultos,
     ninos: this.reservaEditable.ninos,
     id_habitacion: this.reservaEditable.id_habitacion
@@ -280,16 +395,57 @@ private toDateInput(fecha: string | null): string {
 
   this.reservasService.actualizarReserva(payload.id_reservacion, payload).subscribe({
     next: (resp: any) => {
-      alert(`
-        ✔ Reserva actualizada
-
-        Noches: ${resp.noches}
-        Renta base: $${resp.renta_base}
-        Adultos extra: ${resp.adultos_extra}
-        Niños extra: ${resp.ninos_extra}
-        Total nuevo: $${resp.total}
-        `);
-      this.cambiosGuardados.emit();
+      Swal.fire({
+        title: 'Reserva actualizada',
+        html: `
+          <div style="
+            font-size: 14px;
+            text-align: left;
+            line-height: 1.6;
+          ">
+            <b>Noches:</b> ${resp.noches}<br>
+            <b>Renta base:</b> $${resp.renta_base}<br>
+            <b>Adultos extra:</b> ${resp.adultos_extra}<br>
+            <b>Niños extra:</b> ${resp.ninos_extra}<br>
+            <b>Total:</b> <span style="color:#007566; font-weight:600;">$${resp.cargos_detalle.total}</span>
+          </div>
+        `,
+        iconHtml: `
+          <div style="
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            backdrop-filter: blur(8px);
+            background: rgba(255,255,255,0.25);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border: 2px solid rgba(255,255,255,0.4);
+          ">
+            ✔
+          </div>
+        `,
+        customClass: {
+          popup: 'swal-glass',
+          title: 'swal-title-glass'
+        },
+        showConfirmButton: false,
+        timer: 4000,
+        backdrop: `
+          rgba(0,0,0,0.15)
+        `
+      });
+      this.cambiosGuardados.emit({
+        id_reservacion: payload.id_reservacion,
+        nombre_huesped: payload.nombre,
+        apellido1_huesped: payload.apellido,
+        check_in: this.toIso(this.reservaEditable.check_in),
+        check_out: this.toIso(this.reservaEditable.check_out),
+        adultos: this.reservaEditable.adultos,
+        ninos: this.reservaEditable.ninos,
+        id_habitacion: this.reservaEditable.id_habitacion,
+        total_pagar: resp.cargos_detalle?.total ?? resp.total ?? null
+      });
     },
     error: (err) => {
       console.error('Error actualizando reserva:', err);
@@ -299,11 +455,11 @@ private toDateInput(fecha: string | null): string {
   }
 
   onHabitacionChange(nuevaHab: number) {
-  console.log("Cambio de habitación detectado:");
-  console.log("Nueva habitación seleccionada:", this.reservaEditable.id_habitacion);
-  console.log("Nuevo ID habitación:", nuevaHab);
-  this.reservaEditable.id_habitacion = nuevaHab;
-}
+    console.log("Cambio de habitación detectado:");
+    console.log("Nueva habitación seleccionada:", this.reservaEditable.id_habitacion);
+    console.log("Nuevo ID habitación:", nuevaHab);
+    this.reservaEditable.id_habitacion = nuevaHab;
+  }
 
 
 
@@ -331,11 +487,20 @@ private toDateInput(fecha: string | null): string {
   // =============================
   registrarMovimiento() {
 
-    if (!this.nuevoMovimiento.tipo || 
-        !this.nuevoMovimiento.id_concepto || 
-        this.nuevoMovimiento.monto <= 0) {
-
-      alert("Completa el movimiento correctamente.");
+    if (
+      !this.nuevoMovimiento.tipo ||
+      !this.nuevoMovimiento.id_concepto ||
+      this.nuevoMovimiento.monto <= 0
+    ) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta información',
+        text: 'Completa el movimiento correctamente.',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#0f766e',
+        background: '#f9fafb',
+        color: '#0f172a'
+      });
       return;
     }
 
@@ -354,9 +519,17 @@ private toDateInput(fecha: string | null): string {
     this.reservasService.crearMovimiento(this.reserva.id, payload).subscribe({
       next: (resp) => {
         console.log("Movimiento registrado:", resp);
-        this.cambiosGuardados.emit();
+        this.toastAccion(
+          'success',
+          'Movimiento registrado',
+          `Se ha registrado un <b>${payload.tipo}</b> de <b>$${payload.cantidad}</b> en la reserva.`
+        );
 
         this.cargarMovimientosYTotales();
+
+        this.cambiosGuardados.emit({
+          id_reservacion: this.reserva.id
+        });
 
         this.nuevoMovimiento = {
           tipo: "cargo",
@@ -366,7 +539,15 @@ private toDateInput(fecha: string | null): string {
           descripcion: ""
         };
       },
-      error: (err: any) => console.error("Error registrando movimiento:", err)
+      error: (err: any) => {
+        console.error("Error registrando movimiento:", err);
+        this.toastAccion(
+          'error',
+          'Error al registrar',
+          err.error?.error || 'No se pudo registrar el movimiento.'
+        );
+      } 
+      
     });
   }
 
@@ -524,10 +705,21 @@ private toDateInput(fecha: string | null): string {
 
 
   hacerCheckIn() {
-    this.reservasService.checkIn(this.reservaEditable.id_reservacion).subscribe({
-      next: () => {
-        alert('Check-In realizado correctamente');
-        this.cambiosGuardados.emit();
+    const id = this.reservaEditable.id_reservacion;
+    this.reservasService.checkIn(id).subscribe({
+      next: (resp) => {
+        this.toastAccion(
+          'success',
+          'Check-In realizado',
+          `La reserva <b>${this.reservaEditable.folio ?? ''}</b> ha pasado a estado <b>En curso</b>.`
+        );
+
+        this.cambiosGuardados.emit({
+          id_reservacion: id,
+          // solo necesitamos estado aquí
+          estado: 'En curso'
+        });
+
       },
       error: (err) => {
         console.error(err);
@@ -537,17 +729,44 @@ private toDateInput(fecha: string | null): string {
   }
 
   hacerCheckOut() {
-    this.reservasService.checkOut(this.reservaEditable.id_reservacion).subscribe({
-      next: () => {
-        alert('Check-Out realizado correctamente');
-        this.cambiosGuardados.emit();
+    // Si hay saldo pendiente (más cargos que abonos), avisamos y NO dejamos continuar
+    if (this.saldo < 0) {
+      this.mostrarSaldoPendiente();
+      return;
+    }
+
+    const id = this.reservaEditable.id_reservacion;
+
+    this.reservasService.checkOut(id).subscribe({
+      next: (resp) => {
+        this.toastAccion(
+          'success',
+          'Check-Out realizado',
+          `La reserva <b>${this.reservaEditable.folio ?? ''}</b> ha sido marcada como <b>Finalizada</b>.`
+        );
+
+        this.cambiosGuardados.emit({
+          id_reservacion: id,
+          estado: 'Finalizada'
+        });
       },
       error: (err) => {
         console.error(err);
-        alert(err.error?.error || 'Error realizando Check-Out');
+
+        // Por si el backend también valida saldo y manda error de texto
+        const msg = err.error?.error || 'Ocurrió un error al realizar el Check-Out.';
+
+        if (msg.toLowerCase().includes('saldo')) {
+          this.mostrarSaldoPendiente();
+        } else {
+          this.toastAccion('warning', 'Error en Check-Out', msg);
+        }
       }
     });
   }
+
+
+  
 
 
 

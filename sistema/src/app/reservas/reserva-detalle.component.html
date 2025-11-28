@@ -25,10 +25,20 @@
         <div>
           <label>Nombre</label>
           <input [(ngModel)]="reservaEditable.nombre" name="nombre"/>
+          <p class="text-xs text-red-500 mt-1" 
+            *ngIf="nombre && !soloLetras.test(nombre)">
+            * Solo se permiten letras.
+          </p>
+
         </div>
         <div>
           <label>Apellido</label>
           <input [(ngModel)]="reservaEditable.apellido" name="apellido"/>
+          <p class="text-xs text-red-500 mt-1" 
+            *ngIf="apellido && !soloLetras.test(apellido)">
+            * Solo se permiten letras.
+          </p>
+
         </div>
       </div>
 
@@ -41,7 +51,7 @@
           name="id_habitacion"
         >
           <option [ngValue]="h.id_habitacion" *ngFor="let h of habitaciones">
-            {{ h.numero_habitacion }} – {{ h.tipo }}
+            {{ h.numero }} – {{ h.tipo }}
           </option>
         </select>
 
@@ -50,11 +60,11 @@
       <div class="grid-2">
         <div>
           <label>Check-in</label>
-          <input type="date" [(ngModel)]="reservaEditable.check_in" name="checkIn"/>
+          <input type="date" [(ngModel)]="reservaEditable.check_in" name="checkIn" [min]="today" (ngModelChange)="onFechaChange()"/>
         </div>
         <div>
           <label>Check-out</label>
-          <input type="date" [(ngModel)]="reservaEditable.check_out" name="checkOut"/>
+          <input type="date" [(ngModel)]="reservaEditable.check_out" name="checkOut" [min]="reservaEditable.check_in" (ngModelChange)="onFechaChange()"/>
         </div>
       </div>
 
@@ -181,7 +191,7 @@
         <textarea [(ngModel)]="nuevoMovimiento.nota" name="nota"></textarea>
       </div>
 
-      <button type= "button" class="btn-primary" (click)="registrarMovimiento()">Registrar Movimiento</button>
+      <button type= "button" class="btn-primary" >Registrar Movimiento</button>
     </form>
     <div class="h-10"></div>
 
