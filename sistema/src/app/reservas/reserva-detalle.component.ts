@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule, NgClass, CurrencyPipe } from '@angular/common';
+import { CommonModule, NgIf, NgFor, NgClass, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReservasService } from './reservas.service';
 import { HttpClient } from '@angular/common/http';
@@ -15,6 +15,8 @@ import Swal from 'sweetalert2';
     CommonModule,
     FormsModule,
     NgClass,
+    NgIf,
+    NgFor,
     CurrencyPipe
   ]
 })
@@ -200,6 +202,12 @@ export class ReservaDetalleComponent {
   get saldo() {
     return this.totalAbonos - this.totalCargos;
   }
+
+  get estadoBloqueado(): boolean {
+    const est = this.reservaEditable?.estado;
+    return est === 'cancelada' || est === 'finalizada';
+  }
+
 
   private toLocalDate(str: string): Date {
     const [y, m, d] = str.split('-').map(Number);
@@ -466,18 +474,45 @@ private toDateOnly(str: string): string {
 
 
   cancelarReserva() {
-    if (!confirm("¿Seguro que deseas cancelar esta reservación?")) return;
+    const id = this.reservaEditable.id_reservacion;
 
-    this.reservasService.cancelarReserva(this.reservaEditable.id_reservacion).subscribe({
-      next: (resp) => {
-        console.log("Reserva cancelada:", resp);
-        alert("La reservación ha sido cancelada.");
-        this.cambiosGuardados?.emit(); // Para refrescar lista
-      },
-      error: (err) => {
-        console.error(err);
-        alert("Error cancelando la reservación.");
-      }
+    Swal.fire({
+      title: 'Cancelar reserva',
+      text: '¿Seguro que deseas cancelar esta reservación?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No, conservar',
+      reverseButtons: true,
+      background: '#f9fafb',
+      color: '#0f172a',
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+    }).then((result) => {
+      if (!result.isConfirmed) return; // si le da "No", no hacemos nada
+
+      this.reservasService.cancelarReserva(id).subscribe({
+        next: (resp) => {
+          this.toastAccion(
+            'info',
+            'Reserva cancelada',
+            `La reserva <b>${this.reservaEditable.folio ?? ''}</b> fue cancelada correctamente.`
+          );
+
+          this.cambiosGuardados.emit({
+            id_reservacion: id,
+            estado: 'Cancelada'
+          });
+        },
+        error: (err) => {
+          console.error(err);
+          this.toastAccion(
+            'warning',
+            'Error al cancelar',
+            err.error?.error || 'Ocurrió un error al cancelar la reserva.'
+          );
+        }
+      });
     });
   }
 

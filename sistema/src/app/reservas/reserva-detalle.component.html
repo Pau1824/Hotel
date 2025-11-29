@@ -1,3 +1,4 @@
+<div *ngIf="reserva && reserva.id">
 <!-- FONDO OSCURO -->
 <div class="fixed inset-0 bg-black/40 z-40" (click)="cerrar()"></div>
 
@@ -161,7 +162,15 @@
     ============================= -->
     <h3 class="section-title">Registrar Movimiento</h3>
 
-    <form class="section">
+    <!-- Mensaje cuando está bloqueado -->
+    <div *ngIf="estadoBloqueado" class="mt-3 p-3 rounded-xl bg-slate-100 text-slate-600 text-sm">
+      Esta reserva está <b>{{ reservaEditable.estado }}</b>.<br />
+      El estado de cuenta está bloqueado y no acepta nuevos cargos ni abonos.
+    </div>
+
+    <form class="section"
+    [class.opacity-50]="estadoBloqueado"
+    [class.pointer-events-none]="estadoBloqueado">
 
       <div>
         <label>Tipo</label>
@@ -191,10 +200,12 @@
         <textarea [(ngModel)]="nuevoMovimiento.nota" name="nota"></textarea>
       </div>
 
-      <button type= "button" class="btn-primary" >Registrar Movimiento</button>
+      <button type= "button" class="btn-primary" (click)="registrarMovimiento()">Registrar Movimiento</button>
     </form>
     <div class="h-10"></div>
 
   </div>
+
+</div>
 
 </div>

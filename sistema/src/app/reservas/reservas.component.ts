@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { NgFor, NgIf, NgClass, CurrencyPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReservaDetalleComponent } from './reserva-detalle.component';
 import { ReservasService } from './reservas.service';
+import { forkJoin, Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 
 interface Reserva {
@@ -73,7 +75,7 @@ interface Reserva {
       </table>
 
       <app-reserva-detalle
-        *ngIf="detalleAbierto"
+        *ngIf="detalleAbierto && reservaSeleccionada && reservaSeleccionada.id"
         [reserva]="reservaSeleccionada"
         [habitaciones]="habitaciones"
         [movimientos]="movimientos"
@@ -92,129 +94,172 @@ interface Reserva {
   </div>
   `,
 })
-export class ReservasComponent implements OnInit {
+export class ReservasComponent implements OnInit, OnDestroy {
   reservas: any[] = [];
   detalleAbierto = false;
   idSeleccionado: number | null = null;
+  cargandoDetalle = false;
+  cargandoReservas = false;
 
   reservaSeleccionada: any = null;
   movimientos: any[] = [];
   catalogo: any[] = [];
   habitaciones: any[] = [];
 
-  drawerAbierto: boolean = false;
+  //drawerAbierto: boolean = false;
 
+  private paramsSubscription?: Subscription;
 
+  private routerSubscription?: Subscription;
 
-  constructor(private http: HttpClient, private router: Router, private reservasService: ReservasService) {}
+  private isFirstLoad = true;
+
+  constructor(private http: HttpClient, private router: Router, private route: ActivatedRoute, private reservasService: ReservasService, private cdr : ChangeDetectorRef) {}
 
 
 
   ngOnInit() {
-    this.cargarReservas();
-
-    this.router.events.subscribe(e => {
-      if (e instanceof NavigationEnd && e.url === '/reservas') {
-        this.cargarReservas();  // recarga siempre
-      }
+    console.log("🟢 ngOnInit - ReservasComponent inicializado");
+    
+    // ✅ MÉTODO ALTERNATIVO: Suscribirse a queryParams
+    // Esto se dispara cada vez que la ruta cambia
+    this.paramsSubscription = this.route.queryParams.subscribe(() => {
+      console.log("🔄 Route params cambió, recargando...");
+      this.cargarReservas();
     });
+
+    // ✅ Carga inicial también
+    this.cargarReservas();
+  }
+
+  ngOnDestroy() {
+    // ✅ Limpiar la suscripción al destruir el componente
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+  }
+
+  // ✅ TrackBy para mejor performance
+  trackByReserva(index: number, reserva: any): any {
+    return reserva.id_reservacion || index;
   }
 
   cargarReservas() {
-  this.http.get<any[]>('http://localhost:5000/api/reservas').subscribe({
+    console.log("📥 Cargando reservas...");
     
-    next: (data) => {
-      console.log('Backend respondió:', data);
-      this.reservas = data;
-      console.log('Iniciando request de reservas...');
-      console.log('Datos crudos:', data);
-      this.reservas = data.map((r) => ({
-        ...r,
-        nombre: r.nombre ?? r.nombre_huesped,
-        apellido: r.apellido1_huesped || '',
-        apellido2: r.apellido2_huesped || '',
+    this.http.get<any[]>('http://localhost:5000/api/reservas').subscribe({
+      next: (data) => {
+        console.log('✅ Backend respondió:', data);
+        console.log('📊 Cantidad de reservas recibidas:', data.length);
+        
+        // ✅ SOLUCIÓN: Una sola asignación, limpia y clara
+        const reservasProcesadas = data.map((r) => ({
+          ...r,
+          nombre: r.nombre ?? r.nombre_huesped,
+          apellido1: r.apellido1_huesped || '',
+          apellido2: r.apellido2_huesped || '',
+          nombreCompleto: `${r.nombre ?? r.nombre_huesped} ${r.apellido1_huesped || ''} ${r.apellido2_huesped || ''}`.trim(),
+          noches: (new Date(r.salida).getTime() - new Date(r.llegada).getTime()) / (1000 * 3600 * 24),
+        }));
 
-        nombreCompleto: `${r.nombre ?? r.nombre_huesped} ${r.apellido1_huesped || ''} ${r.apellido2_huesped || ''}`.trim(),
+        console.log('🔧 Reservas procesadas:', reservasProcesadas.length);
+        console.log('📋 Primera reserva:', reservasProcesadas[0]);
 
-        noches:
-          (new Date(r.salida).getTime() - new Date(r.llegada).getTime()) /
-          (1000 * 3600 * 24),
-      }));
+        // ✅ Asignar al array
+        this.reservas = reservasProcesadas;
 
-      console.log('Array procesado:', this.reservas);
-    },
-    error: (err) => {
-      console.error('Error al pedir reservas:', err);
-      console.error('Error cargando reservas:', err);
-    },
-  });
-}
+        // ✅ CRÍTICO: Forzar detección de cambios
+        this.cdr.detectChanges();
+
+        console.log('✅ Array final asignado. Length:', this.reservas.length);
+        console.log('✅ Detección de cambios ejecutada');
+      },
+      error: (err) => {
+        console.error('❌ Error cargando reservas:', err);
+      },
+    });
+  }
 
 
  abrirDetalle(id: number) {
-  console.log("CLICK EN VER DETALLE", id);
+    console.log("🔵 CLICK EN VER DETALLE", id);
+    
+    // Evitar múltiples clics mientras carga
+    if (this.cargandoDetalle) {
+      console.log("⚠️ Ya se está cargando un detalle");
+      return;
+    }
 
-  console.log("Abriendo detalle de reserva:", id);
+    // Limpiar estado anterior PRIMERO
+    this.detalleAbierto = false;
+    this.reservaSeleccionada = null;
+    this.movimientos = [];
+    this.habitaciones = [];
+    this.catalogo = [];
+    
+    this.idSeleccionado = id;
+    this.cargandoDetalle = true;
 
-  this.idSeleccionado = id;
+    console.log("📡 Iniciando peticiones HTTP...");
+
+    // Usar setTimeout para asegurar que Angular procese el cierre
+    setTimeout(() => {
+      forkJoin({
+        reserva: this.http.get<any>(`http://localhost:5000/api/reservas/${id}`),
+        movimientos: this.http.get<any[]>(`http://localhost:5000/api/reservas/${id}/movimientos`),
+        habitaciones: this.http.get<any[]>('http://localhost:5000/api/habitaciones'),
+        catalogo: this.http.get<any[]>(`http://localhost:5000/api/conceptos/catalogo-movimientos`)
+      }).subscribe({
+        next: (resultado) => {
+          console.log("✅ Todos los datos cargados:", resultado);
+
+          // Mapear la reserva
+          const reserva = resultado.reserva;
+          this.reservaSeleccionada = {
+            id: reserva.id_reservacion,
+            nombre: reserva.nombre ?? reserva.nombre_huesped ?? '',
+            apellido: reserva.apellido ?? reserva.apellido1_huesped ?? '',
+            check_in: reserva.check_in.split('T')[0],
+            check_out: reserva.check_out.split('T')[0],
+            estado: reserva.estado,
+            personas: reserva.personas,
+            tarifa_base: reserva.tarifa_por_noche,
+            id_habitacion: reserva.id_habitacion,
+            adultos: reserva.adultos ?? 1,
+            ninos: reserva.ninos ?? 0,
+            tarifa_por_noche: Number(reserva.tarifa_por_noche ?? reserva.tarifa_base ?? 0)
+          };
+
+          // Asignar los demás datos
+          this.movimientos = resultado.movimientos || [];
+          this.habitaciones = resultado.habitaciones || [];
+          this.catalogo = resultado.catalogo || [];
+
+          console.log("📦 Reserva mapeada:", this.reservaSeleccionada);
+          console.log("📦 Movimientos:", this.movimientos.length);
+          console.log("📦 Habitaciones:", this.habitaciones.length);
+          console.log("📦 Catálogo:", this.catalogo.length);
+
+          // Esperar un tick más antes de abrir
+          setTimeout(() => {
+            this.detalleAbierto = true;
+            this.cargandoDetalle = false;
+            this.cdr.detectChanges();
+            console.log("🟢 Detalle abierto:", this.detalleAbierto);
+          }, 50);
+        },
+        error: (err) => {
+          console.error("❌ Error cargando datos del detalle:", err);
+          alert("Error al cargar los detalles de la reserva");
+          this.cargandoDetalle = false;
+          this.detalleAbierto = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }, 100);
+  }
 
 
-
-  // 1️⃣ Cargar la reserva individual
-  this.http.get<any>(`http://localhost:5000/api/reservas/${id}`)
-    .subscribe({
-      next: (reserva) => {
-        this.reservaSeleccionada = reserva;
-
-        console.log("Reserva recibida:", reserva);
-
-        // MAPEO CORRECTO PARA EL FORMULARIO 
-        this.reservaSeleccionada = {
-          id: reserva.id_reservacion,
-          nombre: reserva.nombre ?? reserva.nombre_huesped ?? '',
-          apellido: reserva.apellido ?? reserva.apellido1_huesped ?? '',
-          check_in: reserva.check_in.split('T')[0],
-          check_out: reserva.check_out.split('T')[0],
-          estado: reserva.estado,
-          personas: reserva.personas,
-          tarifa_base: reserva.tarifa_por_noche,
-          id_habitacion: reserva.id_habitacion,
-          adultos: reserva.adultos ?? 1,
-          ninos: reserva.ninos ?? 0,
-          tarifa_por_noche: Number(reserva.tarifa_por_noche ?? reserva.tarifa_base ?? 0)
-        };
-
-        console.log("Reserva mapeada:", this.reservaSeleccionada);
-
-        this.drawerAbierto = true;
-
-        // 2️Obtener movimientos
-        this.http.get<any[]>(`http://localhost:5000/api/reservas/${id}/movimientos`)
-          .subscribe({
-            next: (movs: any[]) => {
-              this.movimientos = movs;
-
-              // 3Cargar habitaciones
-              this.cargarHabitaciones();
-
-              // 4️Cargar catálogo
-              this.http.get<any[]>(`http://localhost:5000/api/conceptos/catalogo-movimientos`)
-                .subscribe({
-                  next: (cat: any[]) => {
-                    this.catalogo = cat;
-
-                    // Abrimos el drawer
-                    this.detalleAbierto = true;
-                  },
-                  error: err => console.error("Error catalogo:", err)
-                });
-            },
-            error: err => console.error("Error movimientos:", err)
-          });
-      },
-      error: err => console.error("Error reserva:", err)
-    });
-}
 
 cerrarDetalle() {
   this.detalleAbierto = false;
@@ -360,4 +405,3 @@ refrescarDetalle() {
     this.router.navigateByUrl('/reservas/nueva');
   }
 }
-

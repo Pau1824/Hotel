@@ -547,6 +547,13 @@ router.post('/:id/movimientos', authRequired, async (req, res) => {
     return res.status(400).json({ error: "Faltan datos obligatorios" });
   }
 
+  // 2) Bloquear si está cancelada o finalizada
+    if (estado === 'cancelada' || estado === 'finalizada') {
+      return res.status(400).json({
+        error: `No se pueden registrar movimientos en una reserva ${estado}.`
+      });
+    }
+
   console.log("DEBUG INSERT MOV:", {
     id,
     tipo,
@@ -1253,11 +1260,11 @@ router.put('/:id/cancelar', authRequired, async (req, res) => {
     // =============================
     // VALIDACIÓN 2 — No cancelar si ya hubo check-in
     // =============================
-    if (reserva.estado_habitacion === 'ocupada') {
+    /*if (reserva.estado_habitacion === 'ocupada') {
       return res.status(400).json({
         error: "No se puede cancelar: el huésped ya hizo check-in"
       });
-    }
+    }*/
 
     // =============================
     // 3) Registrar movimiento auditoría
