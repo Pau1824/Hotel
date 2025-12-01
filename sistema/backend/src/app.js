@@ -9,6 +9,8 @@ import reservasRoutes from './routes/reservasRoutes.js';
 import reportesRoutes from './routes/reportesRoutes.js';
 import conceptosRoutes from './routes/conceptosRoutes.js';
 import cortesCajaRoutes from './routes/cortesCajaRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import usuariosRoutes from './routes/usuariosRoutes.js';
 
 import { authRequired, requireRoles } from './middleware/auth.js';
 
@@ -38,6 +40,8 @@ app.use('/api/reservas', authRequired, reservasRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/conceptos', authRequired, conceptosRoutes);
 app.use('/api/corte-caja', cortesCajaRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 
 
 // Ejemplo de ruta SOLO admin_local:

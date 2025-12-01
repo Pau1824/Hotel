@@ -1,12 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet, RouterLink } from '@angular/router';
-import { NgClass } from '@angular/common';
+import { NgClass, NgIf } from '@angular/common';
 import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, NgClass],
+  imports: [RouterOutlet, RouterLink, NgClass, NgIf],
   template: `
   <div class="flex h-screen bg-slate-50">
 
@@ -30,6 +30,7 @@ import { AuthService } from '../auth.service';
       </div>
 
       <nav class="p-4 space-y-2 text-sm">
+      <!-- MÓDULOS COMUNES (admin y recepcionista) -->
         <a routerLink="/dashboard"
           class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100"
           routerLinkActive="bg-slate-100 font-medium">
@@ -47,6 +48,31 @@ import { AuthService } from '../auth.service';
           routerLinkActive="bg-slate-100 font-medium">
           <span class="material-symbols-rounded">bed</span> Habitaciones
         </a>
+
+        <!-- SECCIÓN SOLO ADMIN -->
+        <ng-container *ngIf="isAdmin()">
+          <div class="mt-4 pt-4 border-t border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+            Administración
+          </div>
+
+          <a routerLink="/reportes"
+            class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100"
+            routerLinkActive="bg-slate-100 font-medium">
+            <span class="material-symbols-rounded">monitoring</span> Reportes
+          </a>
+
+          <a routerLink="/usuarios"
+            class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100"
+            routerLinkActive="bg-slate-100 font-medium">
+            <span class="material-symbols-rounded">group</span> Usuarios
+          </a>
+
+          <a routerLink="/config-habitaciones"
+            class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100"
+            routerLinkActive="bg-slate-100 font-medium">
+            <span class="material-symbols-rounded">tune</span> Config. Habitaciones
+          </a>
+        </ng-container>
       </nav>
 
       <button 
@@ -94,8 +120,19 @@ export class LayoutComponent {
     this.sidebarOpen.update(v => !v);
   }
 
+  isAdmin(): boolean {
+    return this.auth.isAdmin();
+  }
+
   logout() {
+    // 1. Limpiar sesión (cookies / user) desde el servicio
     this.auth.logout();
+
+    // 2. Cerrar sidebar por si está abierto
+    this.sidebarOpen.set(false);
+
+    // 3. Enviar al login
+    this.router.navigate(['/login']);
   }
 }
 

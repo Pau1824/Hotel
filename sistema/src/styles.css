@@ -27,3 +27,9 @@
   font-weight: 600 !important;
   font-size: 20px !important;
 }
+
+.bg-login-hotel {
+  background-image: url('img/reception.jpg');
+  background-size: cover;
+  background-position: center;
+}

@@ -30,67 +30,156 @@ interface Reserva {
   imports: [NgFor, NgIf, NgClass, CurrencyPipe, CommonModule, FormsModule, ReservaDetalleComponent],
   template: `
   <div class="p-6 space-y-6">
+    <!-- Título + botón -->
     <div class="flex justify-between items-center">
       <h1 class="text-2xl font-semibold text-brand_dark">Reservas</h1>
-      <button (click)="nuevaReserva()" class="btn-primary flex items-center gap-2">
-        <span class="material-symbols-rounded text-sm">add</span> Nueva Reserva
+
+      <button
+        (click)="nuevaReserva()"
+        class="btn-primary flex items-center gap-2"
+      >
+        <span class="material-symbols-rounded text-sm">add</span>
+        Nueva Reserva
       </button>
     </div>
 
-    <div class="card p-5 overflow-x-auto">
-      <table class="min-w-full text-sm text-slate-700">
-        <thead class="text-slate-500 border-b">
-          <tr>
-            <th class="text-left py-2 px-3">Folio</th>
-            <th class="text-left py-2 px-3">Huésped</th>
-            <th class="text-left py-2 px-3">Habitación</th>
-            <th class="text-center py-2 px-3">Noches</th>
-            <th class="text-center py-2 px-3">Total</th>
-            <th class="text-center py-2 px-3">Estado</th>
-            <th class="text-center py-2 px-3">Acciones</th>
+  <div class="card p-5">
+    <!-- Encabezado de tabla (opcional mini resumen) -->
+    <div class="flex items-center justify-between mb-4">
+      <p class="text-sm text-slate-500">
+        Listado de reservas 
+      </p>
+      <span class="text-xs text-slate-400">
+        Total: {{ reservas.length }} reservas
+      </span>
+    </div>
+
+    <!-- Tabla bonita -->
+    <div class="-mx-4 overflow-x-auto">
+      <table
+        class="min-w-full border-separate border-spacing-y-1 text-sm text-slate-700"
+      >
+        <thead>
+          <tr class="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+            <th class="text-left py-2 px-4">Folio</th>
+            <th class="text-left py-2 px-4">Huésped</th>
+            <th class="text-left py-2 px-4">Habitación</th>
+            <th class="text-center py-2 px-4">Noches</th>
+            <th class="text-right py-2 px-4">Total</th>
+            <th class="text-center py-2 px-4">Estado</th>
+            <th class="text-center py-2 px-4">Acciones</th>
           </tr>
         </thead>
 
         <tbody>
-          <tr *ngFor="let r of reservas" class="border-b hover:bg-slate-50">
-            <td class="py-3 px-3">{{ r.folio }}</td>
-            <td class="py-3 px-3">{{ r.nombre }} {{ r.apellido1 }} {{ r.apellido2 }}</td>
-            <td class="py-3 px-3">{{ r.habitacion }}</td>  <!-- Número de habitación -->
-            <td class="py-3 px-3 text-center">{{ r.noches }}</td>
-            <td class="py-3 px-3 text-center font-medium">{{ r.total | currency:'MXN':'symbol':'1.0-0' }}</td>
-            <td class="py-3 px-3 text-center">
-              <span [ngClass]="{
-                'bg-sky-100 text-sky-700': r.estado === 'Activa',
-                'bg-emerald-100 text-emerald-700': r.estado === 'En curso',
-                'bg-slate-100 text-slate-600': r.estado === 'Finalizada'
-              }" class="px-2.5 py-1 text-xs rounded-md font-medium">
-                {{ r.estado }}
+          <tr
+            *ngFor="let r of reservas"
+            class="group"
+          >
+            <!-- Folio -->
+            <td
+              class="bg-white group-hover:bg-sky-50 transition-colors
+                    py-3 pl-4 pr-3 rounded-l-xl border border-slate-100 border-r-0
+                    font-semibold text-slate-800"
+            >
+              {{ r.folio }}
+            </td>
+
+            <!-- Huésped -->
+            <td
+              class="bg-white group-hover:bg-sky-50 transition-colors
+                    py-3 px-3 border border-slate-100 border-x-0"
+            >
+              {{ r.nombre }} {{ r.apellido1 }} {{ r.apellido2 }}
+            </td>
+
+            <!-- Habitación -->
+            <td
+              class="bg-white group-hover:bg-sky-50 transition-colors
+                    py-3 px-3 border border-slate-100 border-x-0"
+            >
+              Hab {{ r.habitacion }}
+            </td>
+
+            <!-- Noches -->
+            <td
+              class="bg-white group-hover:bg-sky-50 transition-colors
+                    py-3 px-3 border border-slate-100 border-x-0 text-center"
+            >
+              {{ r.noches }}
+            </td>
+
+            <!-- Total -->
+            <td
+              class="bg-white group-hover:bg-sky-50 transition-colors
+                    py-3 px-4 border border-slate-100 border-x-0 text-right
+                    font-semibold"
+            >
+              {{ r.total | currency:'MXN':'symbol':'1.0-0' }}
+            </td>
+
+            <!-- Estado -->
+            <td
+              class="bg-white group-hover:bg-sky-50 transition-colors
+                    py-3 px-3 border border-slate-100 border-x-0 text-center"
+            >
+              <span
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                [ngClass]="{
+                  'bg-sky-100 text-sky-700': r.estado === 'activa',
+                  'bg-emerald-100 text-emerald-700': r.estado === 'en_curso',
+                  'bg-slate-100 text-slate-500': r.estado === 'finalizada',
+                  'bg-rose-100 text-rose-700': r.estado === 'cancelada'
+                }"
+              >
+                {{ r.estado | titlecase }}
               </span>
             </td>
-            <td class="py-3 px-3 text-center space-x-2">
-              <button class="text-sky-600 hover:underline" (click)="abrirDetalle(r.id_reservacion)">Ver detalles</button>
+
+            <!-- Acciones -->
+            <td
+              class="bg-white group-hover:bg-sky-50 transition-colors
+                    py-3 pr-4 pl-3 rounded-r-xl border border-slate-100 border-l-0
+                    text-center"
+            >
+              <button
+                class="inline-flex items-center gap-1 text-xs font-medium
+                      text-sky-600 hover:text-sky-700 hover:underline"
+                (click)="abrirDetalle(r.id_reservacion)"
+              >
+                <span class="material-symbols-rounded text-base">visibility</span>
+                Ver detalle
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
 
-      <app-reserva-detalle
-        *ngIf="detalleAbierto && reservaSeleccionada && reservaSeleccionada.id"
-        [reserva]="reservaSeleccionada"
-        [habitaciones]="habitaciones"
-        [movimientos]="movimientos"
-        [catalogo]="catalogo"
-        (onCerrar)="cerrarDetalle()"
-        (onCancelarReserva)="cancelarReserva()"
-        (onRegistrarMovimiento)="registrarMovimiento($event)"
-        (cambiosGuardados)="onCambiosReserva($event)"
-      ></app-reserva-detalle>
-
-
-      <p *ngIf="!reservas.length" class="text-center text-slate-500 py-6">
-        No hay reservas registradas.
+    <!-- Sin datos -->
+    <div
+      *ngIf="!reservas.length"
+      class="flex flex-col items-center justify-center py-10 text-center text-slate-400"
+    >
+      <span class="material-symbols-rounded text-4xl mb-2">event_busy</span>
+      <p class="text-sm font-medium">No hay reservas registradas.</p>
+      <p class="text-xs">
+        Crea una nueva desde el botón “Nueva Reserva”.
       </p>
     </div>
+
+    <!-- Tu componente de detalle se queda igual -->
+    <app-reserva-detalle
+      *ngIf="detalleAbierto"
+      [reserva]="reservaSeleccionada"
+      [habitaciones]="habitaciones"
+      [movimientos]="movimientos"
+      [catalogo]="catalogo"
+      (onCerrar)="cerrarDetalle()"
+      (onCancelarReserva)="cancelarReserva()"
+      (onRegistrarMovimiento)="registrarMovimiento($event)"
+      (cambiosGuardados)="onCambiosReserva($event)"
+    ></app-reserva-detalle>
   </div>
   `,
 })
@@ -145,40 +234,36 @@ export class ReservasComponent implements OnInit, OnDestroy {
   }
 
   cargarReservas() {
-    console.log("📥 Cargando reservas...");
-    
-    this.http.get<any[]>('http://localhost:5000/api/reservas').subscribe({
-      next: (data) => {
-        console.log('✅ Backend respondió:', data);
-        console.log('📊 Cantidad de reservas recibidas:', data.length);
-        
-        // ✅ SOLUCIÓN: Una sola asignación, limpia y clara
-        const reservasProcesadas = data.map((r) => ({
+  console.log("📥 Cargando reservas...");
+  
+  this.http.get<any[]>('http://localhost:5000/api/reservas').subscribe({
+    next: (data) => {
+      console.log('✅ Backend respondió con', data.length, 'reservas');
+      console.log('📋 Primera reserva RAW del backend:', data[0]);
+      
+      // ✅ El backend YA envía los datos con los nombres correctos (usando AS)
+      // nombre, apellido1, apellido2, llegada, salida, etc.
+      const reservasProcesadas = data.map((r) => {
+        return {
           ...r,
-          nombre: r.nombre ?? r.nombre_huesped,
-          apellido1: r.apellido1_huesped || '',
-          apellido2: r.apellido2_huesped || '',
-          nombreCompleto: `${r.nombre ?? r.nombre_huesped} ${r.apellido1_huesped || ''} ${r.apellido2_huesped || ''}`.trim(),
-          noches: (new Date(r.salida).getTime() - new Date(r.llegada).getTime()) / (1000 * 3600 * 24),
-        }));
+          // ✅ NO necesitas mapear nada porque el backend ya usa AS
+          // Solo calcula las noches
+          noches: Math.ceil((new Date(r.salida).getTime() - new Date(r.llegada).getTime()) / (1000 * 3600 * 24)),
+        };
+      });
 
-        console.log('🔧 Reservas procesadas:', reservasProcesadas.length);
-        console.log('📋 Primera reserva:', reservasProcesadas[0]);
+      console.log('📋 Primera reserva procesada:', reservasProcesadas[0]);
 
-        // ✅ Asignar al array
-        this.reservas = reservasProcesadas;
+      this.reservas = reservasProcesadas;
+      this.cdr.detectChanges();
 
-        // ✅ CRÍTICO: Forzar detección de cambios
-        this.cdr.detectChanges();
-
-        console.log('✅ Array final asignado. Length:', this.reservas.length);
-        console.log('✅ Detección de cambios ejecutada');
-      },
-      error: (err) => {
-        console.error('❌ Error cargando reservas:', err);
-      },
-    });
-  }
+      console.log('✅ Reservas cargadas:', this.reservas.length);
+    },
+    error: (err) => {
+      console.error('❌ Error cargando reservas:', err);
+    },
+  });
+}
 
 
  abrirDetalle(id: number) {

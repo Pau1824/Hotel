@@ -1,0 +1,391 @@
+<!-- src/app/reportes/reportes.component.html -->
+<div class="space-y-6">
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-semibold text-brand_dark">Reportes</h1>
+    <p class="text-slate-500 text-sm">
+      Análisis y estadísticas del hotel
+    </p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 border-b border-slate-200 text-sm">
+    <button
+      class="tab-btn"
+      [ngClass]="{ 'tab-btn-active': selectedTab === 'analytics' }"
+      (click)="selectTab('analytics')"
+    >
+      <span class="material-symbols-rounded text-base">insights</span>
+      Analíticas
+    </button>
+
+    <button
+      class="tab-btn"
+      [ngClass]="{ 'tab-btn-active': selectedTab === 'movimientos' }"
+      (click)="selectTab('movimientos')"
+    >
+      <span class="material-symbols-rounded text-base">payments</span>
+      Movimientos
+    </button>
+
+    <button
+      class="tab-btn"
+      [ngClass]="{ 'tab-btn-active': selectedTab === 'corte' }"
+      (click)="selectTab('corte')"
+    >
+      <span class="material-symbols-rounded text-base">receipt_long</span>
+      Corte de Caja
+    </button>
+  </div>
+
+  <!-- ================== TAB ANALÍTICAS ================== -->
+  <ng-container *ngIf="selectedTab === 'analytics'">
+    <!-- Filtros rango -->
+    <div class="flex flex-wrap gap-3 items-center justify-between">
+      <div class="text-sm text-slate-500">
+        Dashboard de métricas del hotel ·
+        <span class="font-medium text-brand_dark">{{ rangeLabel }}</span>
+      </div>
+
+      <div class="flex gap-2">
+        <button
+          class="chip-btn"
+          [ngClass]="{ 'chip-btn-active': selectedRange === '7d' }"
+          (click)="selectRange('7d')"
+        >
+          7 días
+        </button>
+        <button
+          class="chip-btn"
+          [ngClass]="{ 'chip-btn-active': selectedRange === '30d' }"
+          (click)="selectRange('30d')"
+        >
+          30 días
+        </button>
+        <button
+          class="chip-btn"
+          [ngClass]="{ 'chip-btn-active': selectedRange === 'month' }"
+          (click)="selectRange('month')"
+        >
+          Este mes
+        </button>
+      </div>
+    </div>
+
+    <!-- Tarjetas métricas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
+      <!-- Ocupación -->
+        <div class="card p-5 space-y-2">
+            <p class="text-slate-500 flex items-center gap-2">
+            <span class="material-symbols-rounded text-emerald-500 text-base">analytics</span>
+            Ocupación
+            </p>
+            <p class="text-3xl font-semibold text-slate-800">
+            {{ ocupacion }}%
+            </p>
+            <p class="text-xs text-emerald-600">
+            +0% vs. periodo anterior
+            </p>
+        </div>
+
+        <!-- ADR -->
+        <div class="card p-5 space-y-2">
+            <p class="text-slate-500 flex items-center gap-2">
+            <span class="material-symbols-rounded text-sky-500 text-base">credit_card</span>
+            ADR
+            </p>
+            <p class="text-3xl font-semibold text-slate-800">
+            {{ adr | currency:'MXN':'symbol':'1.0-0' }}
+            </p>
+            <p class="text-xs text-emerald-600">
+            +0% vs. periodo anterior
+            </p>
+        </div>
+
+        <!-- RevPAR -->
+        <div class="card p-5 space-y-2">
+            <p class="text-slate-500 flex items-center gap-2">
+            <span class="material-symbols-rounded text-indigo-500 text-base">stacked_line_chart</span>
+            RevPAR
+            </p>
+            <p class="text-3xl font-semibold text-slate-800">
+            {{ revpar | currency:'MXN':'symbol':'1.0-0' }}
+            </p>
+            <p class="text-xs text-emerald-600">
+            +0% vs. periodo anterior
+            </p>
+        </div>
+
+        <!-- Ingresos -->
+        <div class="card p-5 space-y-2">
+            <p class="text-slate-500 flex items-center gap-2">
+            <span class="material-symbols-rounded text-amber-500 text-base">trending_up</span>
+            Ingresos
+            </p>
+            <p class="text-3xl font-semibold text-slate-800">
+            {{ ingresosTotales | currency:'MXN':'symbol':'1.0-0' }}
+            </p>
+            <p class="text-xs text-emerald-600">
+            +0% vs. periodo anterior
+            </p>
+        </div>
+
+        </div>
+
+
+    <!-- Gráfica ingresos -->
+    <div class="card p-5 mt-5">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <p class="text-slate-700 font-medium">
+            Ingresos Últimos 6 Meses
+          </p>
+          <p class="text-xs text-slate-400">
+            Evolución mensual de ingresos
+          </p>
+        </div>
+      </div>
+
+      <apx-chart
+        *ngIf="ingresosChartOptions"
+        [series]="ingresosChartOptions.series"
+        [chart]="ingresosChartOptions.chart"
+        [dataLabels]="ingresosChartOptions.dataLabels"
+        [stroke]="ingresosChartOptions.stroke"
+        [xaxis]="ingresosChartOptions.xaxis"
+        [yaxis]="ingresosChartOptions.yaxis"
+        [fill]="ingresosChartOptions.fill"
+        [tooltip]="ingresosChartOptions.tooltip">
+    </apx-chart>
+    </div>
+
+    <!-- Ocupación + Mix habitaciones -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
+      <!-- Ocupación del mes -->
+      <div class="card p-5">
+        <p class="text-slate-700 font-medium mb-1">
+          % Ocupación del Mes
+        </p>
+        <p class="text-xs text-slate-400 mb-3">
+          Por semana · Meta: 80%
+        </p>
+
+        <apx-chart
+          [series]="ocupacionChart.series"
+          [chart]="ocupacionChart.chart"
+          [xaxis]="ocupacionChart.xaxis"
+          [stroke]="ocupacionChart.stroke"
+          [markers]="ocupacionChart.markers"
+          [dataLabels]="ocupacionChart.dataLabels"
+          [yaxis]="ocupacionChart.yaxis"
+          [grid]="ocupacionChart.grid"
+        ></apx-chart>
+      </div>
+
+      <!-- Mix de habitaciones -->
+      <div class="card p-5">
+        <p class="text-slate-700 font-medium mb-1">
+          Mix de Habitaciones
+        </p>
+        <p class="text-xs text-slate-400 mb-3">
+          Distribución actual
+        </p>
+
+        <apx-chart
+          [series]="mixChart.series"
+          [chart]="mixChart.chart"
+          [labels]="mixChart.labels"
+          [dataLabels]="mixChart.dataLabels"
+          [legend]="mixChart.legend"
+        ></apx-chart>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ================== TAB MOVIMIENTOS ================== -->
+  <ng-container *ngIf="selectedTab === 'movimientos'">
+    <!-- Filtros -->
+    <div class="card p-5 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <!-- Rango fechas -->
+        <div class="md:col-span-2">
+          <p class="text-sm font-medium text-slate-700 mb-2">Rango de fechas</p>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <label class="block text-slate-500 mb-1">Desde</label>
+              <input
+                type="date"
+                [(ngModel)]="fechaDesde"
+                class="input"
+              />
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-1">Hasta</label>
+              <input
+                type="date"
+                [(ngModel)]="fechaHasta"
+                class="input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Agrupar por -->
+        <div>
+          <p class="text-sm font-medium text-slate-700 mb-2">
+            Agrupar por
+          </p>
+          <select
+            [(ngModel)]="agruparPor"
+            class="input text-sm"
+          >
+            <option value="codigo">Código</option>
+            <option value="cajero">Cajero</option>
+          </select>
+        </div>
+
+        <!-- Cajero -->
+        <div>
+          <p class="text-sm font-medium text-slate-700 mb-2">Cajero</p>
+          <select
+            [(ngModel)]="cajeroFiltro"
+            class="input text-sm"
+          >
+            <option value="todos">Todos los cajeros</option>
+            <option *ngFor="let c of cajerosUnicos" [value]="c">
+              {{ c }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Forma de pago -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+
+        <div class="flex gap-2 text-sm">
+          <button
+            class="px-4 py-2 rounded-full bg-brand_primary text-white font-medium hover:bg-brand_primary/90"
+            (click)="aplicarFiltrosMovimientos()"
+          >
+            Aplicar
+          </button>
+          <button
+            class="px-4 py-2 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+            (click)="reiniciarFiltros()"
+          >
+            Reiniciar
+          </button>
+          <button
+            class="px-4 py-2 rounded-full bg-brand_primary text-white text-sm font-medium hover:bg-brand_primary/90"
+            (click)="exportarMovimientosPDF()"
+            >
+            <span class="material-symbols-rounded text-sm align-middle mr-1">picture_as_pdf</span>
+            Exportar PDF
+            </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Totales -->
+    <div class="flex flex-wrap gap-4 mt-4 text-sm">
+      <div class="badge-pill badge-red">
+        <span class="material-symbols-rounded text-base">trending_down</span>
+        Total Cargos
+        <span class="font-semibold">
+          {{ totalCargos | currency : 'MXN' : 'symbol' : '1.2-2' }}
+        </span>
+      </div>
+
+      <div class="badge-pill badge-green">
+        <span class="material-symbols-rounded text-base">trending_up</span>
+        Total Pagos
+        <span class="font-semibold">
+          {{ totalPagos | currency : 'MXN' : 'symbol' : '1.2-2' }}
+        </span>
+      </div>
+
+      <div class="badge-pill badge-neutral">
+        Saldo Neto
+        <span
+          class="font-semibold"
+          [ngClass]="saldoNeto >= 0 ? 'text-emerald-600' : 'text-rose-600'"
+        >
+          {{ saldoNeto | currency : 'MXN' : 'symbol' : '1.2-2' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Tabla movimientos -->
+    <div class="card mt-4 overflow-x-auto">
+      <div class="px-5 pt-4 pb-3 border-b border-slate-100">
+        <p class="text-slate-700 font-medium">Reporte de Movimientos</p>
+        <p class="text-xs text-slate-400">
+          {{ movimientosAgrupados.length }} grupos 
+        </p>
+      </div>
+
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-slate-500 border-b border-slate-100">
+          <tr>
+            <th class="th">Fecha·Hora</th>
+            <th class="th">Hab.</th>
+            <th class="th">Huésped</th>
+            <th class="th">Código</th>
+            <th class="th">Descripción</th>
+            <th class="th">Comprobante</th>
+            <th class="th">Moneda</th>
+            <th class="th text-right">Cargo</th>
+            <th class="th text-right">Pago</th>
+            <th class="th">Cajero</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <ng-container *ngFor="let grupo of movimientosAgrupados">
+            <!-- Fila grupo -->
+            <tr class="bg-slate-50/70">
+              <td colspan="10" class="px-5 py-2 font-medium text-slate-700">
+                {{ grupo.grupo }}
+              </td>
+            </tr>
+
+            <!-- Filas detalle -->
+            <tr
+              *ngFor="let m of grupo.items"
+              class="border-b border-slate-100 hover:bg-slate-50/60"
+            >
+              <td class="td">{{ m.fechaHora | date:'dd/MM/yyyy' }}</td>
+              <td class="td">{{ m.habitacion }}</td>
+              <td class="td">{{ m.huesped }}</td>
+              <td class="td">{{ m.codigo }}</td>
+              <td class="td">{{ m.descripcion }}</td>
+              <td class="td">{{ m.comprobante }}</td>
+              <td class="td">{{ m.moneda }}</td>
+              <td class="td text-right">
+                {{ m.cargo ? (m.cargo | currency : 'MXN' : 'symbol' : '1.2-2') : '—' }}
+              </td>
+              <td class="td text-right">
+                {{ m.pago ? (m.pago | currency : 'MXN' : 'symbol' : '1.2-2') : '—' }}
+              </td>
+              <td class="td">{{ m.cajero }}</td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ================== TAB CORTE DE CAJA ================== -->
+  <ng-container *ngIf="selectedTab === 'corte'">
+    <div class="card p-6 text-sm space-y-2">
+      <p class="text-slate-700 font-medium">Corte de Caja</p>
+      <p class="text-slate-500">
+        Aquí luego vamos a mostrar un resumen por cajero/turno con totales de
+        débitos, créditos y saldo, además de opción para exportar PDF.
+      </p>
+      <p class="text-slate-400 italic">
+        Por ahora es solo un placeholder para que el diseño quede armado. 🧱
+      </p>
+    </div>
+  </ng-container>
+</div>

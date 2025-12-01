@@ -1,0 +1,131 @@
+<div class="max-w-6xl mx-auto flex flex-col gap-6">
+  <!-- ENCABEZADO -->
+  <div class="flex flex-col gap-2">
+    <h1 class="text-2xl font-semibold text-slate-900">
+      Usuarios del hotel
+    </h1>
+    <p class="text-sm text-slate-500">
+      Solo se muestran usuarios del hotel actual.
+    </p>
+  </div>
+
+  <!-- FILTROS SUPERIORES -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <!-- Chips estado -->
+    <div class="inline-flex rounded-full bg-slate-100 p-1">
+      <button
+        type="button"
+        class="chip-btn"
+        [ngClass]="{ 'chip-btn-active': estadoFiltro === 'activo' }"
+        (click)="setEstadoFiltro('activo')"
+      >
+        Activo
+      </button>
+      <button
+        type="button"
+        class="chip-btn"
+        [ngClass]="{ 'chip-btn-active': estadoFiltro === 'inactivo' }"
+        (click)="setEstadoFiltro('inactivo')"
+      >
+        Inactivo
+      </button>
+    </div>
+
+    <!-- Buscador -->
+    <div class="w-full md:w-72">
+      <div class="relative">
+        <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+          search
+        </span>
+        <input
+          type="text"
+          class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500"
+          placeholder="Buscar usuarios..."
+          [(ngModel)]="search"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA DE USUARIOS -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 border-b border-slate-200">
+        <tr class="text-left text-slate-500">
+          <th class="px-4 py-3 font-medium">Usuario</th>
+          <th class="px-4 py-3 font-medium">Nombre completo</th>
+          <th class="px-4 py-3 font-medium">Teléfono</th>
+          <th class="px-4 py-3 font-medium">Rol</th>
+          <th class="px-4 py-3 font-medium">Estado</th>
+          <th class="px-4 py-3 font-medium">Último acceso</th>
+          <th class="px-4 py-3 font-medium text-right">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <!-- SIN RESULTADOS -->
+        <tr *ngIf="usuariosFiltrados().length === 0">
+          <td colspan="7" class="px-4 py-8 text-center text-slate-400">
+            No se encontraron usuarios con los filtros actuales.
+          </td>
+        </tr>
+
+        <!-- FILAS -->
+        <tr
+          *ngFor="let u of usuariosFiltrados()"
+          class="border-b border-slate-100 hover:bg-slate-50/70 transition-colors"
+        >
+          <td class="px-4 py-3 text-slate-900">
+            {{ u.usuario }}
+          </td>
+
+          <td class="px-4 py-3 text-slate-900">
+            {{ u.nombreCompleto }}
+          </td>
+
+          <td class="px-4 py-3 text-slate-700">
+            {{ u.telefono || '—' }}
+          </td>
+
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-[11px] font-medium">
+              {{ u.rolTexto }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3">
+            <span
+              class="badge"
+              [ngClass]="u.estado === 'activo' ? 'badge-green' : 'badge-gray'"
+            >
+              {{ u.estado === 'activo' ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3 text-slate-700">
+            {{ u.ultimoAcceso ? (u.ultimoAcceso | date:'yyyy-MM-dd HH:mm') : '—' }}
+          </td>
+
+          <td class="px-4 py-3 text-right">
+            <button
+              type="button"
+              class="action-link"
+              *ngIf="u.estado === 'activo'"
+              (click)="desactivar(u)"
+            >
+              Desactivar
+            </button>
+            <button
+              type="button"
+              class="action-link"
+              *ngIf="u.estado === 'inactivo'"
+              (click)="activar(u)"
+            >
+              Activar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

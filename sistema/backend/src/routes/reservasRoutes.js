@@ -283,6 +283,43 @@ router.get('/siguiente-folio', authRequired, async (req, res) => {
   }
 });
 
+
+// GET /api/habitaciones/disponibles - Obtener habitaciones disponibles para un rango de fechas
+router.get('/habitaciones/disponibles', authRequired, async (req, res) => {
+  const { llegada, salida } = req.query;
+
+  console.log('🔍 Consultando disponibilidad:', { llegada, salida });
+
+  if (!llegada || !salida) {
+    return res.status(400).json({ error: 'Se requieren fechas de llegada y salida' });
+  }
+
+  try {
+    // Obtener todas las habitaciones que NO tienen conflictos en ese rango
+    const { rows } = await pool.query(`
+      SELECT DISTINCT h.*
+      FROM habitaciones h
+      WHERE h.estado NOT IN ('mantenimiento', 'bloqueada', 'fuera_servicio', 'inactiva')
+        AND h.id_habitacion NOT IN (
+          -- Habitaciones que YA tienen reservas activas en ese rango
+          SELECT r.id_habitacion
+          FROM reservaciones r
+          WHERE r.estado IN ('activa', 'en_curso')
+            AND NOT (r.check_out <= $1 OR r.check_in >= $2)
+        )
+      ORDER BY h.numero_habitacion
+    `, [llegada, salida]);
+
+    console.log(`✅ Encontradas ${rows.length} habitaciones disponibles`);
+
+    return res.json(rows);
+  } catch (error) {
+    console.error('❌ Error consultando disponibilidad:', error);
+    return res.status(500).json({ error: 'Error al consultar disponibilidad' });
+  }
+});
+
+
 /* ============================================================
    🔥 POST /api/reservas  - Crear reserva con TODAS las validaciones
    ============================================================ */
@@ -302,18 +339,34 @@ router.post('/', authRequired, async (req, res) => {
   // =============================
   const hoy = new Date(); hoy.setHours(0,0,0,0);
 
-  const inDate  = new Date(r.llegada); inDate.setHours(0,0,0,0);
-  const outDate = new Date(r.salida ); outDate.setHours(0,0,0,0);
+  const [yIn, mIn, dIn] = r.llegada.split('-').map(Number);
+  const [yOut, mOut, dOut] = r.salida.split('-').map(Number);
 
-  if (inDate < hoy) {
+  const inDate = new Date(yIn, mIn - 1, dIn);
+  const outDate = new Date(yOut, mOut - 1, dOut);
+
+  inDate.setHours(0, 0, 0, 0);
+  outDate.setHours(0, 0, 0, 0);
+
+  console.log('🔍 Backend - Validación de fechas:', {
+    llegada: r.llegada,
+    salida: r.salida,
+    hoy: hoy.toISOString().split('T')[0],
+    inDate: inDate.toISOString().split('T')[0],
+    inTime: inDate.getTime(),
+    hoyTime: hoy.getTime(),
+    esAntes: inDate.getTime() < hoy.getTime()
+  });
+
+  if (inDate.getTime() < hoy.getTime()) {
     return res.status(400).json({ error: "La fecha de llegada no puede ser antes de hoy." });
   }
 
-  if (outDate <= inDate) {
+  if (outDate.getTime() <= inDate.getTime()) {
     return res.status(400).json({ error: "El check-out debe ser posterior al check-in." });
   }
 
-  const noches = Math.ceil((outDate - inDate) / (1000 * 60 * 60 * 24));
+  const noches = Math.ceil((outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60 * 24));
   if (noches < 1) {
     return res.status(400).json({ error: "La estancia mínima es de 1 noche." });
   }
@@ -547,13 +600,6 @@ router.post('/:id/movimientos', authRequired, async (req, res) => {
     return res.status(400).json({ error: "Faltan datos obligatorios" });
   }
 
-  // 2) Bloquear si está cancelada o finalizada
-    if (estado === 'cancelada' || estado === 'finalizada') {
-      return res.status(400).json({
-        error: `No se pueden registrar movimientos en una reserva ${estado}.`
-      });
-    }
-
   console.log("DEBUG INSERT MOV:", {
     id,
     tipo,
@@ -563,8 +609,27 @@ router.post('/:id/movimientos', authRequired, async (req, res) => {
     nota
   });
 
-
   try {
+    // ✅ PRIMERO: Verificar el estado de la reserva
+    const { rows: reservaRows } = await pool.query(
+      `SELECT estado FROM reservaciones WHERE id_reservacion = $1`,
+      [id]
+    );
+
+    if (!reservaRows.length) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
+
+    const estado = reservaRows[0].estado; // ✅ AHORA SÍ EXISTE
+
+    // 2) Bloquear si está cancelada o finalizada
+    if (estado === 'cancelada' || estado === 'finalizada') {
+      return res.status(400).json({
+        error: `No se pueden registrar movimientos en una reserva ${estado}.`
+      });
+    }
+
+    // 3) Insertar el movimiento
     const sql = `
       INSERT INTO movimientos
         (id_reservacion, id_concepto, tipo, descripcion, cantidad, moneda, metodo_pago, creado_por, nota)
@@ -585,14 +650,16 @@ router.post('/:id/movimientos', authRequired, async (req, res) => {
 
     const { rows } = await pool.query(sql, params);
 
+    console.log("✅ Movimiento registrado exitosamente:", rows[0]);
+
     return res.json({ mensaje: "Movimiento registrado", movimiento: rows[0] });
   } catch (e) {
-    console.error("ERROR REAL en POST /reservas/:id/movimientos");
+    console.error("❌ ERROR REAL en POST /reservas/:id/movimientos");
     console.error("Mensaje:", e.message);
     console.error("Detalle:", e.detail);
     console.error("Código:", e.code);
-    console.error("POST /reservas/:id/movimientos", e);
-    res.status(500).json({ error: "Error al registrar movimiento" });
+    console.error("Stack:", e.stack);
+    res.status(500).json({ error: "Error al registrar movimiento", detalle: e.message });
   }
 });
 
@@ -790,13 +857,28 @@ router.post('/:id/checkout', authRequired, async (req, res) => {
   try {
     // 1) Verificar que exista la reserva
     const { rows: rsv } = await pool.query(
-      `SELECT id_reservacion, estado
+      `SELECT id_reservacion, id_habitacion, estado
          FROM reservaciones
         WHERE id_reservacion = $1
         LIMIT 1`,
       [id]
     );
-    if (!rsv.length) return res.status(404).json({ error: 'Reserva no existe' });
+
+    if (!rsv.length) {
+      return res.status(404).json({ error: 'Reserva no existe' });
+    }
+
+    const reserva = rsv[0];                    // 👈 AQUÍ usamos rsv, no rows
+    const { estado, id_habitacion } = reserva; // 👈 recuperamos estado y hab
+
+    console.log('🔹 Checkout reserva:', reserva);
+
+    // (Opcional) validar estado actual antes de cerrar
+    if (estado === 'cancelada' || estado === 'finalizada') {
+      return res.status(400).json({
+        error: `No se puede hacer checkout de una reserva ${estado}`
+      });
+    }
 
     // 2) Totales en movimientos (tu tabla real)
     const { rows: tot } = await pool.query(
@@ -807,6 +889,7 @@ router.post('/:id/checkout', authRequired, async (req, res) => {
         WHERE id_reservacion = $1`,
       [id]
     );
+
     const debitos  = Number(tot[0].debitos);
     const creditos = Number(tot[0].creditos);
     const saldo    = creditos - debitos;   // saldo <= 0 para permitir checkout
@@ -818,7 +901,7 @@ router.post('/:id/checkout', authRequired, async (req, res) => {
       });
     }
 
-    // 3) Cambiar estado a 'finalizada' (usa tus valores válidos)
+    // 3) Cambiar estado de la reserva a 'finalizada'
     await pool.query(
       `UPDATE reservaciones
           SET estado = 'finalizada'
@@ -826,25 +909,37 @@ router.post('/:id/checkout', authRequired, async (req, res) => {
       [id]
     );
 
-    // 4) (Opcional) registrar un movimiento “Check-out” informativo
+    // 4) Liberar habitación: ponerla en 'disponible'
+    const { rows: roomRows } = await pool.query(
+      `UPDATE habitaciones
+          SET estado = 'disponible'
+        WHERE id_habitacion = $1
+        RETURNING id_habitacion, estado`,
+      [id_habitacion]
+    );
+
+    console.log('🏨 Habitacion liberada:', roomRows[0]);
+
+    // 5) (Opcional) registrar un movimiento “Check-out” informativo
     await pool.query(
       `INSERT INTO movimientos
          (id_reservacion, id_concepto, tipo, descripcion, cantidad, moneda, metodo_pago, creado_por)
        VALUES ($1, 5, 'cargo', 'Cierre de cuenta (checkout)', 0, 'MXN', NULL, $2)`,
       [id, req.user?.id_usuario || null]
     );
-    //console.error('POST /reservas/:id/checkout', e.code, e.message, e.detail);
-
 
     return res.json({
       mensaje: 'Checkout realizado',
-      totales: { debitos, creditos, saldo }
+      totales: { debitos, creditos, saldo },
+      reserva: { id_reservacion: id, estado: 'finalizada' },
+      habitacion: roomRows[0] ?? null
     });
   } catch (e) {
-    console.error('POST /reservas/:id/checkout', e.code, e.message, e.detail);
+    console.error('POST /reservas/:id/checkout', e);
     return res.status(500).json({ error: 'Error al procesar checkout' });
   }
 });
+
 
 
 

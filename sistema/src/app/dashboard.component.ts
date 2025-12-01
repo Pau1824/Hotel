@@ -1,85 +1,208 @@
 import { Component, OnInit } from '@angular/core';
-import { NgFor, NgClass } from '@angular/common';
+import { NgIf, NgFor, NgClass, AsyncPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { NgApexchartsModule, ApexChart, ApexLegend } from 'ng-apexcharts';
+
+interface ActividadItem {
+  tipo: 'checkin' | 'checkout' | 'mantenimiento' | 'reserva' | 'cancelacion';
+  texto: string;
+  fecha?: string;
+}
+
+interface EstadoHabitacion {
+  estado: string;
+  cantidad: number;
+}
+
+interface DashboardResponse {
+  salidasRealizadas: number;
+  salidasTotales: number;
+  llegadasRealizadas: number;
+  llegadasTotales: number;
+  ocupadas: number;
+  totalHabs: number;
+  estadosHabitacion: EstadoHabitacion[];
+  actividad: ActividadItem[];
+}
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [NgFor, NgClass],
+  imports: [NgIf, NgFor, NgClass, AsyncPipe, NgApexchartsModule],
   template: `
   <div class="p-6 space-y-6">
     <h1 class="text-2xl font-semibold text-brand_dark">Panel de Control</h1>
 
-    <!-- Tarjetas resumen -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <div class="card p-5">
-        <p class="text-slate-500">Salidas de hoy</p>
-        <div class="mt-2 h-2 bg-slate-100 rounded-full">
-          <div class="h-2 bg-brand_primary rounded-full" [style.width.%]="salidasProgress"></div>
+    <!-- Usamos async: cuando llegue el dato se pinta solo -->
+    <ng-container *ngIf="dashboard$ | async as d; else loading">
+      <!-- Tarjetas resumen -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Salidas de hoy -->
+        <div class="card p-5 space-y-3">
+          <p class="text-slate-500">Salidas de hoy</p>
+          <div class="flex justify-between text-sm text-slate-500">
+            <span>Realizadas</span>
+            <span>{{ d.salidasRealizadas }} / {{ d.salidasTotales }}</span>
+          </div>
+          <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              class="h-full bg-sky-500 transition-all"
+              [style.width.%]="
+                d.salidasTotales
+                  ? (d.salidasRealizadas / d.salidasTotales) * 100
+                  : 0
+              "
+            ></div>
+          </div>
         </div>
-        <p class="text-sm text-slate-600 mt-2">Realizadas: {{salidasRealizadas}} / {{salidasTotales}}</p>
-      </div>
 
-      <div class="card p-5">
-        <p class="text-slate-500">Llegadas de hoy</p>
-        <div class="mt-2 h-2 bg-slate-100 rounded-full">
-          <div class="h-2 bg-brand_sky rounded-full" [style.width.%]="llegadasProgress"></div>
+        <!-- Llegadas de hoy -->
+        <div class="card p-5 space-y-3">
+          <p class="text-slate-500">Llegadas de hoy</p>
+          <div class="flex justify-between text-sm text-slate-500">
+            <span>Realizadas</span>
+            <span>{{ d.llegadasRealizadas }} / {{ d.llegadasTotales }}</span>
+          </div>
+          <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              class="h-full bg-emerald-500 transition-all"
+              [style.width.%]="
+                d.llegadasTotales
+                  ? (d.llegadasRealizadas / d.llegadasTotales) * 100
+                  : 0
+              "
+            ></div>
+          </div>
         </div>
-        <p class="text-sm text-slate-600 mt-2">Realizadas: {{llegadasRealizadas}} / {{llegadasTotales}}</p>
+
+        <!-- Ocupación actual -->
+        <div class="card p-5 space-y-3">
+          <p class="text-slate-500">Ocupación actual</p>
+          <div class="flex items-baseline gap-2">
+            <span class="text-4xl font-semibold text-sky-600">
+              {{ d.ocupadas }}
+            </span>
+            <span class="text-slate-500">
+              de {{ d.totalHabs }}
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">
+            {{ d.totalHabs - d.ocupadas }} habitaciones disponibles -
+            {{
+              d.totalHabs
+                ? ((d.ocupadas / d.totalHabs) * 100).toFixed(0)
+                : 0
+            }} %
+          </p>
+        </div>
       </div>
 
-      <div class="card p-5 text-center">
-        <p class="text-slate-500">Ocupación actual</p>
-        <p class="text-4xl font-bold text-brand_primary mt-2">{{ocupadas}} <span class="text-lg text-slate-400">de {{totalHabs}}</span></p>
-        <p class="text-sm text-slate-500">{{disponibles}} habitaciones disponibles</p>
-      </div>
-    </div>
+      <!-- Parte de abajo: actividad + gráfico -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+        <!-- Actividad reciente -->
+        <div class="card p-5">
+          <p class="text-slate-500 mb-3">Actividad Reciente</p>
 
-    <!-- Actividad reciente -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div class="card p-5">
-        <p class="font-medium mb-3 text-brand_dark">Actividad Reciente</p>
-        <ul class="space-y-2 text-sm">
-          <li *ngFor="let item of actividad" class="flex items-center gap-2">
-            <span [ngClass]="{
-              'bg-emerald-500': item.tipo==='checkin',
-              'bg-sky-500': item.tipo==='checkout',
-              'bg-amber-500': item.tipo==='mantenimiento'
-            }" class="w-2.5 h-2.5 rounded-full"></span>
-            {{item.texto}}
-          </li>
-        </ul>
-      </div>
+          <ul class="space-y-2" *ngIf="d.actividad.length; else sinActividad">
+            <li
+              *ngFor="let item of d.actividad"
+              class="flex items-center gap-3 text-sm"
+            >
+              <span
+                class="inline-block w-2 h-2 rounded-full"
+                [ngClass]="{
+                  'bg-emerald-500': item.tipo === 'checkin',
+                  'bg-sky-500': item.tipo === 'reserva',
+                  'bg-rose-500': item.tipo === 'checkout',
+                  'bg-amber-500': item.tipo === 'mantenimiento',
+                  'bg-slate-400': item.tipo === 'cancelacion'
+                }"
+              ></span>
+              <span class="text-slate-700">{{ item.texto }}</span>
+            </li>
+          </ul>
 
-      <!-- Gráfico placeholder -->
-      <div class="card p-5 flex flex-col justify-center items-center text-slate-400">
-        <p>[ Gráfico de Estado de Habitaciones ]</p>
+          <ng-template #sinActividad>
+            <p class="text-sm text-slate-400">
+              No hay actividad registrada hoy.
+            </p>
+          </ng-template>
+        </div>
+
+        <!-- Estado de Habitaciones -->
+        <div class="card p-5">
+          <p class="text-slate-500 mb-3">Estado de Habitaciones</p>
+
+          <!-- Gráfico de dona -->
+          <apx-chart
+            [series]="getSeries(d)"
+            [chart]="chartConfig"
+            [labels]="getLabels(d)"
+            [legend]="chartLegend"
+          ></apx-chart>
+
+          
+        </div>
       </div>
-    </div>
+    </ng-container>
+
+    <ng-template #loading>
+      <div class="mt-2 text-sm text-slate-400">
+        Cargando resumen del hotel...
+      </div>
+    </ng-template>
   </div>
   `,
 })
-export class DashboardComponent implements OnInit {
-  salidasRealizadas = 0;
-  salidasTotales = 5;
-  llegadasRealizadas = 0;
-  llegadasTotales = 4;
-  ocupadas = 2;
-  totalHabs = 6;
-  disponibles = 4;
-  actividad = [
-    { tipo: 'checkin', texto: 'Check-in María García - Hab 101' },
-    { tipo: 'checkout', texto: 'Check-out Juan Pérez - Hab 201' },
-    { tipo: 'mantenimiento', texto: 'Mantenimiento Hab 302' },
-    { tipo: 'checkin', texto: 'Nueva reserva Ana López' },
-  ];
+export class DashboardComponent {
+  
+  // Observable: Angular lo maneja con el async pipe
+  dashboard$: Observable<DashboardResponse>;
 
-  get salidasProgress() { return (this.salidasRealizadas / this.salidasTotales) * 100; }
-  get llegadasProgress() { return (this.llegadasRealizadas / this.llegadasTotales) * 100; }
+  constructor(private http: HttpClient) {
+    this.dashboard$ = this.http.get<DashboardResponse>(
+      'http://localhost:5000/api/dashboard/resumen'
+    );
+  }
 
-  constructor(private http: HttpClient) {}
+    // Config básica del gráfico de dona
+    chartConfig: ApexChart = {
+      type: 'donut',
+      height: 230
+    };
 
-  ngOnInit() {
-    // luego aquí conectaremos con tu backend /api/reportes/resumen
+    chartLegend: ApexLegend = {
+      position: 'bottom'
+    };
+
+    // Helpers para construir series/labels a partir del resultado del API
+    getSeries(d: DashboardResponse): number[] {
+      return d.estadosHabitacion.map((e) => e.cantidad);
+    }
+
+    getLabels(d: DashboardResponse): string[] {
+      return d.estadosHabitacion.map((e) => e.estado);
+    }
+
+
+  
+
+  estadoColorClass(estado: string): string {
+    switch (estado) {
+      case 'Disponible':
+      case 'disponible':
+        return 'bg-emerald-400';
+      case 'Ocupada':
+      case 'ocupada':
+        return 'bg-sky-500';
+      case 'Mantenimiento':
+      case 'mantenimiento':
+      case 'inactiva':
+        return 'bg-amber-400';
+      default:
+        return 'bg-slate-300';
+    }
   }
 }
+

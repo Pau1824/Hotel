@@ -1,0 +1,65 @@
+/* src/app/reportes/reportes.component.css */
+
+:host {
+  display: block;
+}
+
+/* Tabs */
+
+.tab-btn {
+  @apply flex items-center gap-2 px-4 py-2 rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-brand_dark text-sm;
+}
+
+.tab-btn-active {
+  @apply bg-white text-brand_dark border-brand_primary shadow-sm;
+}
+
+/* Chips */
+
+.chip-btn {
+  @apply px-3 py-1.5 rounded-full text-xs border border-slate-200 text-slate-600 hover:bg-slate-50;
+}
+
+.chip-btn-active {
+  @apply bg-brand_primary text-white border-brand_primary;
+}
+
+/* Inputs */
+
+.input {
+  @apply w-full px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand_primary/70 focus:border-brand_primary text-sm;
+}
+
+/* Badges totales */
+
+.badge-pill {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs;
+}
+
+.badge-red {
+  @apply border-rose-100 bg-rose-50 text-rose-700;
+}
+
+.badge-green {
+  @apply border-emerald-100 bg-emerald-50 text-emerald-700;
+}
+
+.badge-neutral {
+  @apply border-slate-200 bg-white text-slate-600;
+}
+
+/* Tabla */
+
+.th {
+  @apply px-5 py-2 text-left text-xs font-medium uppercase tracking-wide;
+}
+
+.td {
+  @apply px-5 py-2 text-slate-700 align-top;
+}
+
+/* Pills tabla */
+
+.pill {
+  @apply inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs;
+}

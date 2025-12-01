@@ -9,57 +9,158 @@ import { NgIf } from '@angular/common';
   selector: 'app-login',
   imports: [ReactiveFormsModule, NgIf],
   template: `
-  <div class="min-h-screen grid place-items-center bg-gradient-to-b from-white to-sky-50 px-4">
-    <div class="card w-full max-w-[420px] p-8 text-center">
+  <div class="min-h-screen bg-slate-50 flex">
+    <!-- LADO IZQUIERDO: imagen / branding -->
+    <div class="hidden lg:flex w-1/2 relative overflow-hidden">
+      <!-- Fondo gradiente -->
+      <div class="absolute inset-0 bg-slate-900"></div>
 
-      <!-- Icono -->
-      <div class="w-14 h-14 mx-auto mb-5 rounded-2xl bg-brand_primary/10 text-brand_primary grid place-items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-7 h-7">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v9.75a.75.75 0 00.75.75H9.75v-6a.75.75 0 01.75-.75h3a.75.75 0 01.75.75v6h4.5a.75.75 0 00.75-.75V9.75" />
-        </svg>
+      <!-- Si quieres imagen real, pon tu foto en assets y descomenta esto -->
+      
+      <div
+        class="absolute inset-0 bg-login-hotel opacity-80 filter brightness-[0.7]">
       </div>
 
-      <!-- Título -->
-      <h1 class="text-2xl font-semibold mb-1 text-brand_dark">Iniciar sesión</h1>
-      <p class="text-slate-500 mb-6">Ingresa tus credenciales</p>
+      <!-- Degradado NEGRO suave para que el texto se lea bien -->
+      <div class="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/40 to-black/10"></div>
+      
+      <div
+        class="absolute inset-y-0 right-0 w-20
+              bg-gradient-to-r from-black/60 via-black/10 to-transparent"
+      ></div>
 
-      <!-- Formulario -->
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 text-left">
+      <div class="relative z-10 w-full h-full flex flex-col justify-between p-10 text-sky-50">
+        <!-- Logo + nombre -->
         <div>
-          <label class="text-sm font-medium text-slate-700">Nombre de usuario</label>
-          <input type="text"
-                 formControlName="nombreusuario"
-                 class="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand_primary"
-                 placeholder="recepcionista">
-        </div>
+          <div class="inline-flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center">
+              <span class="material-symbols-rounded text-2xl">hotel</span>
+            </div>
+            <div>
+              <p class="text-sm font-semibold tracking-wide uppercase">
+                Hotel ERP
+              </p>
+              <p class="text-xs text-sky-100/80">
+                Sistema de Gestión
+              </p>
+            </div>
+          </div>
 
-        <div>
-          <label class="text-sm font-medium text-slate-700">Contraseña</label>
-          <div class="relative">
-            <input [type]="showPass ? 'text' : 'password'"
-                   formControlName="contrasena"
-                   class="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand_primary"
-                   placeholder="••••••••">
-            <button type="button"
-                    (click)="showPass = !showPass"
-                    class="absolute right-3 top-[10px] text-slate-400 hover:text-slate-600">
-              <svg *ngIf="!showPass" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.27 4.5 12 4.5c4.729 0 8.576 3.01 9.964 7.183a1.012 1.012 0 010 .639C20.576 16.49 16.729 19.5 12 19.5c-4.729 0-8.576-3.01-9.964-7.178z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <svg *ngIf="showPass" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.23 19.5 12 19.5c.993 0 1.953-.138 2.864-.396M6.228 6.228A10.45 10.45 0 0112 4.5c4.77 0 8.774 3.162 10.066 7.5a10.523 10.523 0 01-4.293 5.18M6.228 6.228L3 3m3.228 3.228l11.544 11.544M21 21l-3-3" />
-              </svg>
-            </button>
+          <div class="mt-10 max-w-md space-y-4">
+            <h2 class="text-3xl font-semibold leading-tight">
+              Controla reservas, habitaciones y ocupación en un solo lugar.
+            </h2>
+            <p class="text-sm text-sky-100/80">
+              Diseñado para recepción, gerencia y administración de tu hotel.
+            </p>
+
+            <ul class="mt-4 space-y-2 text-sm text-sky-100/90">
+              <li class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
+                Check-in y check-out en tiempo real.
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
+                Estado de habitaciones siempre actualizado.
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
+                Dashboard con métricas del día.
+              </li>
+            </ul>
           </div>
         </div>
 
-        <button class="btn-primary w-full mt-3" [disabled]="form.invalid || loading">
-          {{ loading ? 'Entrando...' : 'Entrar' }}
-        </button>
+        <div class="text-xs text-sky-100/70">
+          © {{ year }} Hotel ERP · Módulo Recepción
+        </div>
+      </div>
+    </div>
 
-        <p *ngIf="error" class="text-center text-red-600 text-sm mt-2">{{ error }}</p>
-      </form>
+    <!-- LADO DERECHO: formulario -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center px-6 py-10 lg:pl-0 lg:pr-24">
+      <div class="w-full max-w-md lg:-ml-16">
+        <!-- Logo pequeño solo en mobile -->
+        <div class="flex items-center justify-center mb-6 lg:hidden">
+          <div class="w-12 h-12 rounded-2xl bg-sky-100 flex items-center justify-center mr-2">
+            <span class="material-symbols-rounded text-2xl text-sky-600">hotel</span>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-slate-800">Hotel ERP</p>
+            <p class="text-xs text-slate-500">Sistema de Gestión</p>
+          </div>
+        </div>
+
+        <!-- Card de login -->
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100/80 p-8 space-y-6">
+          <div class="text-center space-y-1">
+            <h1 class="text-2xl font-semibold text-brand_dark">Iniciar sesión</h1>
+            <p class="text-sm text-slate-500">
+              Ingresa tus credenciales para acceder al panel
+            </p>
+          </div>
+
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 text-left">
+            <!-- Usuario -->
+            <div>
+              <label class="text-sm font-medium text-slate-700">Nombre de usuario</label>
+              <div
+                class="flex items-center gap-2 px-3 py-2.5 mt-1 rounded-xl border border-slate-200 bg-slate-50/60
+                       focus-within:border-sky-500 focus-within:bg-white transition-colors">
+                <span class="material-symbols-rounded text-slate-400 text-lg">person</span>
+                <input
+                  type="text"
+                  formControlName="nombreusuario"
+                  class="w-full bg-transparent outline-none text-sm text-slate-800 placeholder:text-slate-400"
+                  placeholder="recepcionista">
+              </div>
+            </div>
+
+            <!-- Contraseña -->
+            <div>
+              <label class="text-sm font-medium text-slate-700">Contraseña</label>
+              <div
+                class="flex items-center gap-2 px-3 py-2.5 mt-1 rounded-xl border border-slate-200 bg-slate-50/60
+                       focus-within:border-sky-500 focus-within:bg-white transition-colors relative">
+                <span class="material-symbols-rounded text-slate-400 text-lg">lock</span>
+                <input
+                  [type]="showPass ? 'text' : 'password'"
+                  formControlName="contrasena"
+                  class="w-full bg-transparent outline-none text-sm text-slate-800 placeholder:text-slate-400"
+                  placeholder="••••••••">
+                <button
+                  type="button"
+                  (click)="showPass = !showPass"
+                  class="text-slate-400 hover:text-slate-600">
+                  <span class="material-symbols-rounded text-lg">
+                    {{ showPass ? 'visibility_off' : 'visibility' }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Error -->
+            <p *ngIf="error" class="text-center text-red-600 text-sm mt-2">{{ error }}</p>
+
+            <!-- Botón -->
+            <button
+              class="btn-primary w-full mt-3 flex items-center justify-center gap-2"
+              [disabled]="form.invalid || loading">
+              <ng-container *ngIf="!loading; else loadingTpl">
+                Entrar
+              </ng-container>
+              <ng-template #loadingTpl>
+                <span class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                Entrando...
+              </ng-template>
+            </button>
+          </form>
+
+          <div class="pt-2 text-center text-[11px] text-slate-400">
+            Si tienes problemas para ingresar, contacta al administrador del hotel.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   `,
@@ -69,6 +170,8 @@ export class LoginComponent {
   error = '';
   showPass = false;
   form: any;
+  
+  year = new Date().getFullYear();
 
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
     this.form = this.fb.group({

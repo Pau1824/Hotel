@@ -47,11 +47,11 @@ import { isPlatformBrowser } from '@angular/common';
         <label class="label">Habitación</label>
         <select class="input" [ngModel]="habitacionSeleccionada()" (ngModelChange)="habitacionSeleccionada.set($event); actualizarTarifa()">
           <option [ngValue]="null">Seleccionar habitación</option>
-          <option *ngFor="let h of habitaciones()" [ngValue]="h" [disabled]="h.estado === 'Mantenimiento' || h.estado === 'Reservada' || h.estado === 'Inactiva' || h.estado === 'Fuera de servicio'">
+          <option *ngFor="let h of habitaciones()" [ngValue]="h" [disabled]="!estaDisponible(h)">
             Habitación {{ h.numero }} — {{ h.tipo }} 
           </option>
         </select>
-        <p class="text-xs text-red-500 mt-1" *ngIf="habitacionSeleccionada()?.estado !== 'Disponible'">
+        <p class="text-xs text-red-500 mt-1" *ngIf="habitacionSeleccionada() && !estaDisponible(habitacionSeleccionada()!)">
           * Esta habitación no está disponible.
         </p>
       </div>
@@ -216,10 +216,19 @@ export class NuevaReservaComponent {
   // VARIABLES
   folio = signal<string>('');
 
-  today: string = new Date().toISOString().split('T')[0];
+  // 1️⃣ REEMPLAZA la definición de today (línea ~219)
+  today: string = (() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Normalizar a medianoche
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  })();
 
 
   habitaciones = signal<any[]>([]);
+  habitacionesDisponibles = signal<number[]>([]);
   habitacion: number | null = null;
 
   habitacionSeleccionada = signal<any | null>(null);
@@ -333,6 +342,8 @@ get ninosExtra(): number {
 
         console.log("Habitaciones cargadas (procesadas):", this.habitaciones);
 
+        this.verificarDisponibilidad();
+
         // 4. Si venimos desde /habitaciones, auto-seleccionamos
         if (numeroHab) {
           const hab = this.habitaciones().find((h:any) => Number(h.numero) == numeroHab);
@@ -346,6 +357,60 @@ get ninosExtra(): number {
       error: (err) => console.error("Error cargando habitaciones:", err)
     });
   }
+
+  verificarDisponibilidad() {
+    // Solo verificar si hay fechas seleccionadas
+    if (!this.checkIn || !this.checkOut) {
+      // Si no hay fechas, todas están "disponibles" (no filtramos)
+      const todosLosIds = this.habitaciones().map(h => h.id_habitacion);
+      this.habitacionesDisponibles.set(todosLosIds);
+      return;
+    }
+
+    console.log('🔍 Verificando disponibilidad para:', this.checkIn, '-', this.checkOut);
+
+    // Llamar al backend para obtener habitaciones disponibles
+    this.http.get<any[]>(
+      `http://localhost:5000/api/habitaciones/disponibles?llegada=${this.checkIn}&salida=${this.checkOut}`
+    ).subscribe({
+      next: (disponibles) => {
+        console.log('✅ Habitaciones disponibles:', disponibles);
+        
+        // Guardar solo los IDs
+        const idsDisponibles = disponibles.map(h => h.id_habitacion);
+        this.habitacionesDisponibles.set(idsDisponibles);
+
+        // Si la habitación seleccionada ya no está disponible, deseleccionarla
+        if (this.habitacionSeleccionada()) {
+          const idActual = this.habitacionSeleccionada()!.id_habitacion;
+          if (!idsDisponibles.includes(idActual)) {
+            console.log('⚠️ Habitación seleccionada ya no disponible, limpiando...');
+            this.habitacionSeleccionada.set(null);
+            this.tarifa = 0;
+            this.calcularTotales();
+          }
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error verificando disponibilidad:', err);
+        // En caso de error, permitir todas
+        const todosLosIds = this.habitaciones().map(h => h.id_habitacion);
+        this.habitacionesDisponibles.set(todosLosIds);
+      }
+    });
+  }
+
+  estaDisponible(habitacion: any): boolean {
+  // Si no hay fechas seleccionadas, solo verificar estado físico
+  if (!this.checkIn || !this.checkOut) {
+    const estadosNoDisponibles = ['mantenimiento', 'bloqueada', 'fuera_servicio', 'inactiva'];
+    return !estadosNoDisponibles.includes(habitacion.estado?.toLowerCase());
+  }
+
+  // Si hay fechas, verificar que esté en la lista de disponibles
+  const disponibles = this.habitacionesDisponibles();
+  return disponibles.includes(habitacion.id_habitacion);
+}
 
 
 
@@ -425,15 +490,28 @@ get ninosExtra(): number {
 
 
   calcularNoches() {
-    if (!this.checkIn || !this.checkOut) return;
+    if (!this.checkIn || !this.checkOut) {
+      this.noches = 1;
+      this.calcularTotales();
+      return;
+    }
 
-    const inDate = new Date(this.checkIn);
-    const outDate = new Date(this.checkOut);
-    const diff = outDate.getTime() - inDate.getTime();
-    this.noches = Math.max(1, Math.ceil(diff / (1000 * 3600 * 24)));
+    const inicio = new Date(this.checkIn);
+    const fin = new Date(this.checkOut);
+    const diff = fin.getTime() - inicio.getTime();
+    
+    this.noches = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 
+    console.log(`📅 Noches calculadas: ${this.noches}`);
+    
     this.calcularTotales();
+    
+    // ✅ IMPORTANTE: Verificar disponibilidad cada vez que cambien las fechas
+    this.verificarDisponibilidad();
   }
+
+
+
 
   get adultosExtra(): number {
     if (!this.habitacionSeleccionada) return 0;
@@ -519,18 +597,47 @@ get ninosExtra(): number {
    VALIDACIONES — FRONTEND (CORREGIDAS PARA TU CÓDIGO REAL)
    ============================================================ */
 
+// 2️⃣ REEMPLAZA completamente validarFechas() (línea ~522)
 validarFechas(): string | null {
   const llegada = this.checkIn;
-  const salida  = this.checkOut;
+  const salida = this.checkOut;
 
   if (!llegada || !salida) return "Debe seleccionar fechas válidas.";
 
-  const inDate = this.toLocalDate(this.checkIn);
-  const outDate = this.toLocalDate(this.checkOut);
-  const hoy    = this.toLocalDate(this.today);
+  // Crear fechas normalizadas
+  const [yIn, mIn, dIn] = llegada.split('-').map(Number);
+  const [yOut, mOut, dOut] = salida.split('-').map(Number);
+  const [yHoy, mHoy, dHoy] = this.today.split('-').map(Number);
 
-  if (inDate < hoy) return "La fecha de llegada no puede ser antes de hoy.";
-  if (outDate <= inDate) return "El check-out debe ser posterior al check-in.";
+  const inDate = new Date(yIn, mIn - 1, dIn);
+  const outDate = new Date(yOut, mOut - 1, dOut);
+  const hoy = new Date(yHoy, mHoy - 1, dHoy);
+
+  // Normalizar TODAS a medianoche
+  inDate.setHours(0, 0, 0, 0);
+  outDate.setHours(0, 0, 0, 0);
+  hoy.setHours(0, 0, 0, 0);
+
+  console.log('🔍 DEBUG Validación:', {
+    llegada,
+    salida,
+    today: this.today,
+    inDate: inDate.toISOString(),
+    hoy: hoy.toISOString(),
+    inTime: inDate.getTime(),
+    hoyTime: hoy.getTime(),
+    esAntes: inDate.getTime() < hoy.getTime(),
+    esIgual: inDate.getTime() === hoy.getTime()
+  });
+
+  // ✅ LA CLAVE: Usar getTime() para comparar timestamps
+  if (inDate.getTime() < hoy.getTime()) {
+    return "La fecha de llegada no puede ser antes de hoy.";
+  }
+
+  if (outDate.getTime() <= inDate.getTime()) {
+    return "El check-out debe ser posterior al check-in.";
+  }
 
   return null;
 }
@@ -539,6 +646,14 @@ validarFechas(): string | null {
 private toLocalDate(str: string): Date {
   const [y, m, d] = str.split('-').map(Number);
   return new Date(y, m - 1, d, 0, 0, 0, 0);
+}
+
+private getLocalToday(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 validarCapacidad(): string | null {
