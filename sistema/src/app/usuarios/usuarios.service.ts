@@ -13,6 +13,15 @@ export interface Usuario {
   ultimoAcceso: string | null;
 }
 
+export interface CrearUsuarioDto {
+  usuario: string;
+  nombre: string;
+  apellido: string;
+  telefono?: string | null;
+  correo?: string | null;
+  contrasena: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
   private API = 'http://localhost:5000/api/usuarios';
@@ -29,8 +38,15 @@ export class UsuariosService {
     return this.http.get<Usuario[]>(this.API, { params });
 }
 
-  crearUsuario(dto: any) {
-    return this.http.post(this.API, dto);
+  crearUsuario(dto: CrearUsuarioDto): Observable<any> {
+    return this.http.post<any>(`${this.API}`, {
+      nombreusuario: dto.usuario,
+      primer_nombre: dto.nombre,
+      apellido: dto.apellido,
+      telefono: dto.telefono || null,
+      correo: dto.correo || null,
+      contrasena: dto.contrasena,
+    });
   }
 
   actualizarUsuario(id: number, dto: any) {

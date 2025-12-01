@@ -9,7 +9,149 @@
     </p>
   </div>
 
-  <!-- FILTROS SUPERIORES -->
+  <!-- BOTÓN NUEVO USUARIO -->
+  <button
+    class="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+    (click)="abrirNuevoUsuario()">
+    + Nuevo usuario
+  </button>
+
+  <!-- ========== MODAL EDITAR USUARIO ========== -->
+  <ng-container *ngIf="editarVisible">
+    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+      <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4">
+          Editar usuario recepcionista
+        </h2>
+
+        <!-- FORM CAMPOS -->
+        <div class="grid md:grid-cols-2 gap-4">
+          <!-- Usuario -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">
+              Usuario *
+            </label>
+            <input
+              type="text"
+              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              [(ngModel)]="editarUsuario.usuario"
+              name="usuarioEditar"
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- espacio para que cuadre el grid -->
+          <div></div>
+
+          <!-- Nombre(s) -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">
+              Nombre(s) *
+            </label>
+            <input
+              type="text"
+              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              [(ngModel)]="editarUsuario.nombre"
+              name="editarNombre"
+            />
+          </div>
+
+          <!-- Apellidos -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">
+              Apellidos *
+            </label>
+            <input
+              type="text"
+              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              [(ngModel)]="editarUsuario.apellido"
+              name="editarApellido"
+            />
+          </div>
+
+          <!-- Teléfono -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">
+              Teléfono
+            </label>
+            <input
+              type="tel"
+              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              [(ngModel)]="editarUsuario.telefono"
+              name="editarTelefono"
+              maxlength="10"
+              inputmode="numeric"
+            />
+          </div>
+
+          <!-- Correo -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">
+              Correo
+            </label>
+            <input
+              type="email"
+              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              [(ngModel)]="editarUsuario.correo"
+              name="correoEditar"
+            />
+          </div>
+
+          <!-- Nueva contraseña -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">
+              Nueva contraseña
+            </label>
+            <input
+              type="password"
+              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              [(ngModel)]="editarUsuario.nuevaContrasena"
+              name="passEditar"
+              autocomplete="new-password"
+            />
+            <p class="text-[11px] text-slate-400 mt-1">
+              Déjalo vacío si no quieres cambiar la contraseña.
+            </p>
+          </div>
+
+          <!-- Repetir nueva contraseña -->
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">
+              Repetir nueva contraseña
+            </label>
+            <input
+              type="password"
+              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              [(ngModel)]="editarUsuario.repetirContrasena"
+              name="pass2Editar"
+              autocomplete="new-password"
+            />
+          </div>
+        </div>
+
+        <!-- BOTONES MODAL -->
+        <div class="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+            (click)="cancelarEditarUsuario()"
+            [disabled]="guardandoEdicion">
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            (click)="guardarEdicionUsuario()"
+            [disabled]="guardandoEdicion">
+            {{ guardandoEdicion ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ========== FILTROS SUPERIORES ========== -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
     <!-- Chips estado -->
     <div class="inline-flex rounded-full bg-slate-100 p-1">
@@ -17,16 +159,14 @@
         type="button"
         class="chip-btn"
         [ngClass]="{ 'chip-btn-active': estadoFiltro === 'activo' }"
-        (click)="setEstadoFiltro('activo')"
-      >
+        (click)="setEstadoFiltro('activo')">
         Activo
       </button>
       <button
         type="button"
         class="chip-btn"
         [ngClass]="{ 'chip-btn-active': estadoFiltro === 'inactivo' }"
-        (click)="setEstadoFiltro('inactivo')"
-      >
+        (click)="setEstadoFiltro('inactivo')">
         Inactivo
       </button>
     </div>
@@ -47,7 +187,134 @@
     </div>
   </div>
 
-  <!-- TABLA DE USUARIOS -->
+  <!-- ========== FORMULARIO NUEVO USUARIO ========== -->
+  <div *ngIf="nuevoVisible" class="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
+    <h2 class="text-base font-semibold text-slate-800 mb-3">
+      Nuevo usuario recepcionista
+    </h2>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">
+          Usuario *
+        </label>
+        <input
+          type="text"
+          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          [(ngModel)]="nuevoUsuario.usuario"
+          name="usuarioNuevo"
+          autocomplete="off"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">
+          Teléfono
+        </label>
+        <input
+          type="tel"
+          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          [(ngModel)]="nuevoUsuario.telefono"
+          name="telNuevo"
+          autocomplete="off"
+          maxlength="10"
+          inputmode="numeric"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">
+          Nombre(s) *
+        </label>
+        <input
+          type="text"
+          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          [(ngModel)]="nuevoUsuario.nombre"
+          name="nombreNuevo"
+          autocomplete="off"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">
+          Apellidos *
+        </label>
+        <input
+          type="text"
+          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          [(ngModel)]="nuevoUsuario.apellido"
+          name="apellidoNuevo"
+          autocomplete="off"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">
+          Correo
+        </label>
+        <input
+          type="email"
+          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          [(ngModel)]="nuevoUsuario.correo"
+          name="correoNuevo"
+          autocomplete="off"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">
+          Rol
+        </label>
+        <div class="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+          Recepcionista
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">
+          Contraseña *
+        </label>
+        <input
+          type="password"
+          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          [(ngModel)]="nuevoUsuario.contrasena"
+          name="passNuevo"
+          autocomplete="new-password"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">
+          Repetir contraseña *
+        </label>
+        <input
+          type="password"
+          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          [(ngModel)]="nuevoUsuario.repetirContrasena"
+          name="pass2Nuevo"
+          autocomplete="new-password"
+        />
+      </div>
+    </div>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <button
+        class="px-3 py-2 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+        type="button"
+        (click)="cancelarNuevoUsuario()">
+        Cancelar
+      </button>
+      <button
+        class="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+        type="button"
+        [disabled]="guardando"
+        (click)="guardarNuevoUsuario()">
+        {{ guardando ? 'Guardando...' : 'Guardar usuario' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== TABLA DE USUARIOS ========== -->
   <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 border-b border-slate-200">
@@ -63,18 +330,15 @@
       </thead>
 
       <tbody>
-        <!-- SIN RESULTADOS -->
         <tr *ngIf="usuariosFiltrados().length === 0">
           <td colspan="7" class="px-4 py-8 text-center text-slate-400">
             No se encontraron usuarios con los filtros actuales.
           </td>
         </tr>
 
-        <!-- FILAS -->
         <tr
           *ngFor="let u of usuariosFiltrados()"
-          class="border-b border-slate-100 hover:bg-slate-50/70 transition-colors"
-        >
+          class="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
           <td class="px-4 py-3 text-slate-900">
             {{ u.usuario }}
           </td>
@@ -96,8 +360,7 @@
           <td class="px-4 py-3">
             <span
               class="badge"
-              [ngClass]="u.estado === 'activo' ? 'badge-green' : 'badge-gray'"
-            >
+              [ngClass]="u.estado === 'activo' ? 'badge-green' : 'badge-gray'">
               {{ u.estado === 'activo' ? 'Activo' : 'Inactivo' }}
             </span>
           </td>
@@ -106,22 +369,18 @@
             {{ u.ultimoAcceso ? (u.ultimoAcceso | date:'yyyy-MM-dd HH:mm') : '—' }}
           </td>
 
-          <td class="px-4 py-3 text-right">
+          <td class="px-6 py-4 text-sm text-right space-x-4">
             <button
-              type="button"
-              class="action-link"
-              *ngIf="u.estado === 'activo'"
-              (click)="desactivar(u)"
-            >
-              Desactivar
+              class="text-slate-600 hover:text-emerald-600"
+              (click)="abrirEditarUsuario(u)">
+              Editar
             </button>
+
             <button
-              type="button"
-              class="action-link"
-              *ngIf="u.estado === 'inactivo'"
-              (click)="activar(u)"
-            >
-              Activar
+              class="font-medium"
+              [ngClass]="u.estado === 'activo' ? 'text-red-600 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-700'"
+              (click)="u.estado === 'activo' ? desactivar(u) : activar(u)">
+              {{ u.estado === 'activo' ? 'Desactivar' : 'Activar' }}
             </button>
           </td>
         </tr>
