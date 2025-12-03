@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Obtener tarifa por número de habitación
 router.get('/numero/:numero', async (req, res) => {
-  console.log("📥 Petición recibida a /habitaciones/numero:", req.params.numero);
+  console.log(" Petición recibida a /habitaciones/numero:", req.params.numero);
   const { numero } = req.params;
   try {
     const {rows} = await pool.query(

@@ -1,6 +1,8 @@
 // src/routes/reportesRoutes.js
 import express from 'express';
 import pool from '../db.js';
+import { authRequired } from '../middleware/auth.js';
+
 
 const router = express.Router();
 
@@ -15,8 +17,9 @@ const router = express.Router();
  * - tarifa promedio (ADR)
  */
 // GET /api/reportes/resumen?range=7d|30d|month
-router.get('/resumen', async (req, res) => {
+router.get('/resumen', authRequired, async (req, res) => {
   try {
+    const scopeHotelId = req.scopeHotelId;
     const range = req.query.range || '30d';
 
     // ===== 1. Calcular fecha de inicio según el rango =====
@@ -46,9 +49,10 @@ router.get('/resumen', async (req, res) => {
         COUNT(*) FILTER (WHERE estado = 'ocupada')       AS ocupadas,
         COUNT(*) FILTER (WHERE estado = 'disponible')    AS disponibles,
         COUNT(*) FILTER (WHERE estado = 'mantenimiento') AS mantenimiento
-      FROM habitaciones;
+      FROM habitaciones h
+      WHERE h.id_hotel = $1;
     `;
-    const { rows: habRows } = await pool.query(habSql);
+    const { rows: habRows } = await pool.query(habSql, [scopeHotelId]);
     const totalHabs = Number(habRows[0].total || 0);
     const ocupadas = Number(habRows[0].ocupadas || 0);
     const disponibles = Number(habRows[0].disponibles || 0);
@@ -124,8 +128,9 @@ router.get('/resumen', async (req, res) => {
  * GET /api/reportes/habitaciones-en-uso
  * Habitaciones que no están disponibles
  */
-router.get('/habitaciones-en-uso', async (req, res) => {
+router.get('/habitaciones-en-uso', authRequired, async (req, res) => {
   try {
+    const scopeHotelId = req.scopeHotelId;
     const { rows } = await pool.query(`
       SELECT
         id_habitacion,
@@ -135,8 +140,9 @@ router.get('/habitaciones-en-uso', async (req, res) => {
         tarifa_base
       FROM habitaciones
       WHERE estado IN ('ocupada','mantenimiento')
+      AND id_hotel = $1
       ORDER BY numero_habitacion
-    `);
+    `, [scopeHotelId]);
 
     res.json(rows);
   } catch (error) {
@@ -149,8 +155,10 @@ router.get('/habitaciones-en-uso', async (req, res) => {
 
 
 // GET /api/reportes/ingresos-mensuales
-router.get('/ingresos-mensuales', async (req, res) => {
+router.get('/ingresos-mensuales', authRequired, async (req, res) => {
   try {
+
+    const scopeHotelId = req.scopeHotelId;
     const now = new Date();
     const currentYear = now.getFullYear();     // año actual
     const currentMonth = now.getMonth() + 1;   // 1–12
@@ -170,6 +178,7 @@ router.get('/ingresos-mensuales', async (req, res) => {
         ON m.id_reservacion = r.id_reservacion
       WHERE 
         r.estado <> 'cancelada'                      -- ignorar canceladas
+        AND r.id_hotel = $4
         AND EXTRACT(YEAR FROM r.check_in) = $1       -- SOLO año actual
         AND EXTRACT(MONTH FROM r.check_in) BETWEEN $2 AND $3
       GROUP BY mes
@@ -180,6 +189,7 @@ router.get('/ingresos-mensuales', async (req, res) => {
       currentYear,
       startMonth,
       currentMonth,
+      scopeHotelId
     ]);
 
     const mesesNombres = [
@@ -212,8 +222,9 @@ router.get('/ingresos-mensuales', async (req, res) => {
 
 
 // GET /api/reportes/ingresos-rango?range=7d|30d|month
-router.get('/ingresos-rango', async (req, res) => {
+router.get('/ingresos-rango', authRequired, async (req, res) => {
   try {
+    const scopeHotelId = req.scopeHotelId;
     const range = req.query.range || '30d';
 
     let dateCondition;
@@ -249,12 +260,13 @@ router.get('/ingresos-rango', async (req, res) => {
       JOIN movimientos mov
         ON mov.id_reservacion = r.id_reservacion
       WHERE
+        r.id_hotel = $1
         r.check_in IS NOT NULL
         AND r.estado <> 'cancelada'
         AND ${dateCondition};
     `;
 
-    const { rows } = await pool.query(sql);
+    const { rows } = await pool.query(sql, [scopeHotelId]);
     const totalCargos = Number(rows[0].total_cargos || 0);
 
     return res.json({
@@ -272,15 +284,16 @@ router.get('/ingresos-rango', async (req, res) => {
 
 
 // GET /api/reportes/ocupacion-semanal
-router.get('/ocupacion-semanal', async (req, res) => {
+router.get('/ocupacion-semanal', authRequired, async (req, res) => {
   try {
+    const scopeHotelId = req.scopeHotelId; 
     // 1) Parámetros de mes actual
     const { rows: paramRows } = await pool.query(`
       SELECT
         date_trunc('month', CURRENT_DATE)::date AS inicio_mes,
         (date_trunc('month', CURRENT_DATE) + interval '1 month - 1 day')::date AS fin_mes,
-        (SELECT COUNT(*)::int FROM habitaciones)                      AS total_habitaciones
-    `);
+        (SELECT COUNT(*)::int FROM habitaciones WHERE id_hotel = $1)                      AS total_habitaciones
+    `, [scopeHotelId]);
 
     const { inicio_mes, fin_mes, total_habitaciones } = paramRows[0];
 
@@ -295,7 +308,8 @@ router.get('/ocupacion-semanal', async (req, res) => {
           r.estado
         FROM reservaciones r
         WHERE
-          r.check_in BETWEEN $1 AND $2
+          r.id_hotel = $4
+          AND r.check_in BETWEEN $1 AND $2
           AND r.estado IN ('activa', 'en_curso', 'finalizada')
       ),
       semanas AS (
@@ -319,7 +333,7 @@ router.get('/ocupacion-semanal', async (req, res) => {
       FROM semanas
       ORDER BY semana;
       `,
-      [inicio_mes, fin_mes, total_habitaciones]
+      [inicio_mes, fin_mes, total_habitaciones, scopeHotelId]
     );
 
     // Si no hay semanas, devolvemos 4 puntos en 0 para que el gráfico no muera
@@ -345,8 +359,9 @@ router.get('/ocupacion-semanal', async (req, res) => {
 
 
 // GET /api/reportes/mix-habitaciones
-router.get('/mix-habitaciones', async (req, res) => {
+router.get('/mix-habitaciones', authRequired, async (req, res) => {
   try {
+    const scopeHotelId = req.scopeHotelId;
     const { rows } = await pool.query(
       `
       SELECT
@@ -355,8 +370,8 @@ router.get('/mix-habitaciones', async (req, res) => {
         COUNT(*) FILTER (WHERE estado = 'disponible')::int    AS libres,
         COUNT(*) FILTER (WHERE estado = 'mantenimiento')::int AS mantenimiento
       FROM habitaciones
-      `
-    );
+      WHERE id_hotel = $1  
+      `, [scopeHotelId]);
 
     const row = rows[0];
 
@@ -408,12 +423,13 @@ router.get('/mix-habitaciones', async (req, res) => {
 //   - agruparPor: 'codigo' | 'cajero' (opcional, default 'codigo')
 //   - cajero: nombre del cajero (opcional)
 // GET /api/reportes/movimientos
-router.get('/movimientos', async (req, res) => {
+router.get('/movimientos', authRequired, async (req, res) => {
   try {
+    const scopeHotelId = req.scopeHotelId
     const { fechaDesde, fechaHasta, agruparPor, cajero } = req.query;
 
-    const where = [];
-    const params = [];
+    const where = [`h.id_hotel = $1`];
+    const params = [scopeHotelId];
     //let i = 1;
 
     // Filtro por rango de fechas (sobre la fecha del movimiento)

@@ -1,24 +1,27 @@
 /* src/app/usuarios/usuarios.component.css */
+
 .chip-btn {
   @apply text-xs md:text-sm px-3 py-1.5 rounded-full text-slate-600 font-medium transition-colors;
 }
 
 .chip-btn-active {
-  @apply bg-white text-emerald-700 shadow-sm;
+  @apply bg-white text-sky-700 shadow-sm border border-sky-100;
 }
 
 .badge {
   @apply inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-semibold;
 }
 
+/* Activo */
 .badge-green {
-  @apply bg-emerald-50 text-emerald-700;
+  @apply bg-sky-50 text-sky-700;
 }
 
+/* Inactivo */
 .badge-gray {
   @apply bg-slate-100 text-slate-500;
 }
 
 .action-link {
-  @apply text-emerald-600 text-xs md:text-sm font-medium hover:text-emerald-700 hover:underline;
+  @apply text-sky-600 text-xs md:text-sm font-medium hover:text-sky-700 hover:underline;
 }

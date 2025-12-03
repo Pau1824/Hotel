@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, NgClass, AsyncPipe } from '@angular/common';
+import { NgIf, NgFor, NgClass, AsyncPipe, CurrencyPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { NgApexchartsModule, ApexChart, ApexLegend } from 'ng-apexcharts';
@@ -24,12 +24,13 @@ interface DashboardResponse {
   totalHabs: number;
   estadosHabitacion: EstadoHabitacion[];
   actividad: ActividadItem[];
+  tarifaPromedio: number;
 }
 
 @Component({
   standalone: true,
   selector: 'app-dashboard',
-  imports: [NgIf, NgFor, NgClass, AsyncPipe, NgApexchartsModule],
+  imports: [NgIf, NgFor, NgClass, AsyncPipe, NgApexchartsModule, CurrencyPipe],
   template: `
   <div class="p-6 space-y-6">
     <h1 class="text-2xl font-semibold text-brand_dark">Panel de Control</h1>
@@ -95,6 +96,18 @@ interface DashboardResponse {
                 : 0
             }} %
           </p>
+        </div>
+        <!--  TARIFA PROMEDIO  -->
+        <div class="card p-5 space-y-3 md:col-span-1 bg-white shadow-md rounded-xl border border-sky-100">
+          <p class="text-slate-500">Tarifa promedio</p>
+
+          <div class="flex items-baseline gap-2">
+            <span class="text-4xl font-semibold text-sky-600">
+              {{ d.tarifaPromedio | currency:'MXN':'symbol':'1.0-0' }}
+            </span>
+          </div>
+
+          <p class="text-xs text-slate-500">Promedio de tarifas base de habitaciones activas</p>
         </div>
       </div>
 

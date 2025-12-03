@@ -6,6 +6,8 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { PLATFORM_ID} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import Swal from 'sweetalert2';
+
 
 
 @Component({
@@ -216,7 +218,7 @@ export class NuevaReservaComponent {
   // VARIABLES
   folio = signal<string>('');
 
-  // 1️⃣ REEMPLAZA la definición de today (línea ~219)
+  // 1️ REEMPLAZA la definición de today (línea ~219)
   today: string = (() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0); // Normalizar a medianoche
@@ -326,13 +328,13 @@ get ninosExtra(): number {
   ngOnInit() {
     // 1. Leer el número de habitación enviado en la URL
     const numeroHab = Number(this.route.snapshot.queryParamMap.get('habitacion'));
-    console.log("🏨 Param habitacion recibido:", numeroHab);
+    console.log(" Param habitacion recibido:", numeroHab);
 
     this.obtenerFolio();
 
     this.http.get<any[]>('http://localhost:5000/api/habitaciones').subscribe({
       next: (data) => {
-        console.log("🔍 OBJETOS HAB:", data);
+        console.log(" OBJETOS HAB:", data);
         this.habitaciones.set(data.map(h => ({
           ...h,
           precio_adulto_extra: Number(h.precio_adulto_extra),
@@ -347,7 +349,7 @@ get ninosExtra(): number {
         // 4. Si venimos desde /habitaciones, auto-seleccionamos
         if (numeroHab) {
           const hab = this.habitaciones().find((h:any) => Number(h.numero) == numeroHab);
-          console.log("🏨 Hab encontrada:", hab);
+          console.log(" Hab encontrada:", hab);
           if (hab) {
             this.habitacionSeleccionada.set(hab);
             this.actualizarTarifa(); // opcional, si quieres actualizar la tarifa instantáneamente
@@ -359,58 +361,19 @@ get ninosExtra(): number {
   }
 
   verificarDisponibilidad() {
-    // Solo verificar si hay fechas seleccionadas
-    if (!this.checkIn || !this.checkOut) {
-      // Si no hay fechas, todas están "disponibles" (no filtramos)
-      const todosLosIds = this.habitaciones().map(h => h.id_habitacion);
-      this.habitacionesDisponibles.set(todosLosIds);
-      return;
-    }
-
-    console.log('🔍 Verificando disponibilidad para:', this.checkIn, '-', this.checkOut);
-
-    // Llamar al backend para obtener habitaciones disponibles
-    this.http.get<any[]>(
-      `http://localhost:5000/api/habitaciones/disponibles?llegada=${this.checkIn}&salida=${this.checkOut}`
-    ).subscribe({
-      next: (disponibles) => {
-        console.log('✅ Habitaciones disponibles:', disponibles);
-        
-        // Guardar solo los IDs
-        const idsDisponibles = disponibles.map(h => h.id_habitacion);
-        this.habitacionesDisponibles.set(idsDisponibles);
-
-        // Si la habitación seleccionada ya no está disponible, deseleccionarla
-        if (this.habitacionSeleccionada()) {
-          const idActual = this.habitacionSeleccionada()!.id_habitacion;
-          if (!idsDisponibles.includes(idActual)) {
-            console.log('⚠️ Habitación seleccionada ya no disponible, limpiando...');
-            this.habitacionSeleccionada.set(null);
-            this.tarifa = 0;
-            this.calcularTotales();
-          }
-        }
-      },
-      error: (err) => {
-        console.error('❌ Error verificando disponibilidad:', err);
-        // En caso de error, permitir todas
-        const todosLosIds = this.habitaciones().map(h => h.id_habitacion);
-        this.habitacionesDisponibles.set(todosLosIds);
-      }
-    });
+    // Ya no filtramos por fechas en el front.
+    // Solo mantenemos esto por si lo llamas en otros lados; no hace nada.
+    const todosLosIds = this.habitaciones().map(h => h.id_habitacion);
+    this.habitacionesDisponibles.set(todosLosIds);
   }
 
+
   estaDisponible(habitacion: any): boolean {
-  // Si no hay fechas seleccionadas, solo verificar estado físico
-  if (!this.checkIn || !this.checkOut) {
+    // Solo bloqueamos si físicamente no se puede usar
     const estadosNoDisponibles = ['mantenimiento', 'bloqueada', 'fuera_servicio', 'inactiva'];
     return !estadosNoDisponibles.includes(habitacion.estado?.toLowerCase());
   }
 
-  // Si hay fechas, verificar que esté en la lista de disponibles
-  const disponibles = this.habitacionesDisponibles();
-  return disponibles.includes(habitacion.id_habitacion);
-}
 
 
 
@@ -430,7 +393,7 @@ get ninosExtra(): number {
     console.log("habitacionSeleccionada:", this.habitacionSeleccionada);
 
     if (!this.habitacionSeleccionada()) {
-      console.warn("⚠ No hay habitación seleccionada");
+      console.warn(" No hay habitación seleccionada");
       this.tarifa = 0;
       this.camasExtra = 0;
       this.camasExtraMax = 0;
@@ -440,7 +403,7 @@ get ninosExtra(): number {
     }
 
     const id = this.habitacionSeleccionada().id_habitacion;
-    console.log("➡ Id seleccionado:", id);
+    console.log(" Id seleccionado:", id);
 
     // 🔹 Tarifa base que ya usas
     this.tarifa = Number(this.habitacionSeleccionada().tarifa_base || 0);
@@ -464,7 +427,12 @@ get ninosExtra(): number {
       },
       error: (err) => {
         console.error("Error obteniendo tarifa:", err);
-        alert("Error obteniendo tarifa: " + (err.error?.error || "Error desconocido"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error obteniendo tarifa',
+          text: err.error?.error || "Error desconocido al consultar la tarifa.",
+          confirmButtonColor: '#0ea5e9',
+        });
       }
     });
   }
@@ -502,11 +470,11 @@ get ninosExtra(): number {
     
     this.noches = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 
-    console.log(`📅 Noches calculadas: ${this.noches}`);
+    console.log(` Noches calculadas: ${this.noches}`);
     
     this.calcularTotales();
     
-    // ✅ IMPORTANTE: Verificar disponibilidad cada vez que cambien las fechas
+    //  IMPORTANTE: Verificar disponibilidad cada vez que cambien las fechas
     this.verificarDisponibilidad();
   }
 
@@ -597,7 +565,7 @@ get ninosExtra(): number {
    VALIDACIONES — FRONTEND (CORREGIDAS PARA TU CÓDIGO REAL)
    ============================================================ */
 
-// 2️⃣ REEMPLAZA completamente validarFechas() (línea ~522)
+// 2️ REEMPLAZA completamente validarFechas() (línea ~522)
 validarFechas(): string | null {
   const llegada = this.checkIn;
   const salida = this.checkOut;
@@ -618,7 +586,7 @@ validarFechas(): string | null {
   outDate.setHours(0, 0, 0, 0);
   hoy.setHours(0, 0, 0, 0);
 
-  console.log('🔍 DEBUG Validación:', {
+  console.log(' DEBUG Validación:', {
     llegada,
     salida,
     today: this.today,
@@ -630,7 +598,7 @@ validarFechas(): string | null {
     esIgual: inDate.getTime() === hoy.getTime()
   });
 
-  // ✅ LA CLAVE: Usar getTime() para comparar timestamps
+  //  LA CLAVE: Usar getTime() para comparar timestamps
   if (inDate.getTime() < hoy.getTime()) {
     return "La fecha de llegada no puede ser antes de hoy.";
   }
@@ -688,28 +656,70 @@ validarCamasExtra(): string | null {
   guardarReserva() {
     console.log("guardarReserva() disparado");
 
+    // Validaciones front
     const v1 = this.validarFechas();
-    if (v1) { alert(v1); return; }
+    if (v1) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Fechas inválidas',
+        text: v1,
+        confirmButtonColor: '#0ea5e9',
+      });
+      return;
+    }
 
     const v2 = this.validarCapacidad();
-    if (v2) { alert(v2); return; }
+    if (v2) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Capacidad excedida',
+        text: v2,
+        confirmButtonColor: '#0ea5e9',
+      });
+      return;
+    }
 
     const v3 = this.validarCamasExtra();
-    if (v3) { alert(v3); return; }
+    if (v3) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Camas extra',
+        text: v3,
+        confirmButtonColor: '#0ea5e9',
+      });
+      return;
+    }
 
 
-    if (!this.habitacionSeleccionada) {
-      alert("Selecciona una habitación primero.");
+    if (!this.habitacionSeleccionada()) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Selecciona una habitación',
+        text: 'Debes elegir una habitación antes de guardar la reserva.',
+        confirmButtonColor: '#0ea5e9',
+      });
       return;
     }
 
     if (!this.nombre || !this.apellido) {
-      alert("Ingresa nombre y apellido.");
+      Swal.fire({
+        icon: 'info',
+        title: 'Ingresa nombre y apellido',
+        text: 'Debes ingresar el nombre y apellido antes de guardar la reserva',
+        confirmButtonColor: '#0ea5e9',
+      }
+      )
       return;
     }
 
     if (!this.checkIn || !this.checkOut) {
-      alert("Selecciona fechas válidas.");
+      Swal.fire({
+        icon: 'info',
+        title: 'Selecciona fechas validas',
+        text: 'Debes ingresar fechas validas antes de guardar la reserva',
+        confirmButtonColor: '#0ea5e9',
+      }
+      )
       return;
     }
 
@@ -730,19 +740,34 @@ validarCamasExtra(): string | null {
 
     if (!id_habitacion) {
       console.error("ERROR: numero_habitacion viene undefined");
-      alert("Error interno: No se pudo obtener el número de habitación.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error interno',
+        text: 'No se pudo obtener el número de habitación.',
+        confirmButtonColor: '#0ea5e9',
+      });
       return;
     }
 
     this.calcularTotales();
 
     if (!this.nombreRegex.test(this.nombre)) {
-      alert("El nombre solo puede contener letras.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Nombre inválido',
+        text: 'El nombre solo puede contener letras.',
+        confirmButtonColor: '#0ea5e9',
+      });
       return;
     }
 
     if (!this.nombreRegex.test(this.apellido)) {
-      alert("El apellido solo puede contener letras.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Apellido inválido',
+        text: 'El apellido solo puede contener letras.',
+        confirmButtonColor: '#0ea5e9',
+      });
       return;
     }
 
@@ -773,14 +798,40 @@ validarCamasExtra(): string | null {
     // -----------------------------
     this.http.post('http://localhost:5000/api/reservas', payload).subscribe({
       next: (resp: any) => {
-        console.log("Reserva guardada correctamente:", resp);
-        alert("Reserva registrada con éxito.");
-        this.router.navigate(['/reservas']);   // regresar a la lista de reservas
+        console.log('Reserva guardada correctamente:', resp);
+        Swal.fire({
+          icon: 'success',
+          title: 'Reserva creada',
+          text: 'La reserva se registró correctamente.',
+          confirmButtonColor: '#0ea5e9',
+        }).then(() => {
+          this.router.navigate(['/reservas']);
+        });
       },
       error: (err) => {
-        console.error("Error guardando reserva:", err);
-        alert("Error al guardar reserva: " + (err.error?.error || "Desconocido"));
-      }
+        console.error('Error guardando reserva:', err);
+
+        if (err.status === 409) {
+          //  Habitación ya ocupada en ese rango
+          Swal.fire({
+            icon: 'warning',
+            title: 'Habitación ocupada',
+            text:
+              err.error?.error ||
+              'La habitación ya está reservada en ese rango de fechas.',
+            confirmButtonColor: '#0ea5e9',
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al guardar',
+            text:
+              err.error?.error ||
+              'Ocurrió un error al guardar la reserva.',
+            confirmButtonColor: '#0ea5e9',
+          });
+        }
+      },
     });
   }
 

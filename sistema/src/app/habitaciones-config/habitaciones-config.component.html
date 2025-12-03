@@ -1,0 +1,202 @@
+<div class="max-w-7xl mx-auto space-y-8 p-4 sm:p-6">
+
+  <!-- ENCABEZADO -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    
+    <div class="space-y-1">
+      <h1 class="text-3xl font-bold text-slate-800 tracking-tight">
+        Configuración de Habitaciones
+      </h1>
+      <p class="text-sm text-slate-500">
+        Administra tipos, estados y disponibilidad de todas las habitaciones.
+      </p>
+    </div>
+
+    <!-- FILTROS -->
+    <div
+      class="bg-white/70 backdrop-blur-sm border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center gap-3">
+      
+      <label class="text-sm font-medium text-slate-600 whitespace-nowrap">
+        Filtrar por estado:
+      </label>
+
+      <select
+        class="rounded-lg border border-slate-300 bg-white text-sm px-3 py-2 focus:ring-2 focus:ring-brand_primary outline-none"
+        [ngModel]="filtroEstado()"
+        (ngModelChange)="filtroEstado.set($event)">
+        <option value="todas">Todas</option>
+        <option value="disponible">Disponibles</option>
+        <option value="ocupada">Ocupadas</option>
+        <option value="mantenimiento">Mantenimiento</option>
+        <option value="inactiva">Inactivas</option>
+      </select>
+
+      <button
+        class="px-4 py-2 rounded-lg bg-brand_primary text-white text-sm shadow hover:shadow-md transition-all"
+        (click)="abrirCrear()">
+        + Crear habitación
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div *ngIf="cargando()" class="text-sm text-slate-500 animate-pulse">
+    Cargando habitaciones...
+  </div>
+
+  <!-- ERROR -->
+  <div *ngIf="error()" class="text-sm text-rose-600">
+    {{ error() }}
+  </div>
+
+  <!-- TABLA -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wide">
+          <th class="px-5 py-3 text-left">Número</th>
+          <th class="px-5 py-3 text-left">Piso</th>
+          <th class="px-5 py-3 text-left">Tipo</th>
+          <th class="px-5 py-3 text-left">Tarifa base</th>
+          <th class="px-5 py-3 text-left">Estado</th>
+          <th class="px-5 py-3 text-right">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let h of habitacionesFiltradas()"
+            class="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
+          
+          <td class="px-5 py-3 font-medium text-slate-800">{{ h.numero_habitacion }}</td>
+          <td class="px-5 py-3">{{ h.piso ?? '—' }}</td>
+          <td class="px-5 py-3">{{ h.tipo || 'Sin tipo' }}</td>
+          <td class="px-5 py-3">
+            {{ h.tarifa_base | currency : 'MXN' : 'symbol' : '1.0-0' }}
+          </td>
+
+          <td class="px-5 py-3">
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+              [ngClass]="getBadgeClass(h.estado)">
+              {{ h.estado | titlecase }}
+            </span>
+          </td>
+
+          <td class="px-5 py-3 text-right space-x-2">
+
+            <!-- Editar -->
+            <button
+              class="btn-soft border-slate-300 hover:bg-slate-100"
+              (click)="editarHabitacion(h)">
+              Editar
+            </button>
+
+            <!-- Mantenimiento -->
+            <button
+              class="btn-soft border-sky-300 text-sky-700 hover:bg-sky-100"
+              (click)="cambiarEstado(h, 'mantenimiento')"
+              [disabled]="h.estado === 'mantenimiento'">
+              Mantto.
+            </button>
+
+            <!-- Activar -->
+            <button
+              class="btn-soft border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+              (click)="cambiarEstado(h, 'disponible')"
+              [disabled]="h.estado === 'disponible'">
+              {{ h.estado === 'mantenimiento' ? 'Disponible' : 'Activar' }}
+            </button>
+
+            <!-- Desactivar -->
+            <button
+              class="btn-soft border-rose-300 text-rose-700 hover:bg-rose-100"
+              (click)="cambiarEstado(h, 'inactiva')"
+              [disabled]="h.estado === 'inactiva'">
+              Desactivar
+            </button>
+
+          </td>
+        </tr>
+
+        <tr *ngIf="!cargando() && habitacionesFiltradas().length === 0">
+          <td colspan="6" class="px-5 py-8 text-center text-slate-500">
+            No hay habitaciones para el filtro seleccionado.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- MODALES AESTHETIC -->
+  <style>
+    .modal-bg {
+      backdrop-filter: blur(6px);
+    }
+    .input {
+      @apply w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand_primary outline-none;
+    }
+    .btn-soft {
+      @apply px-3 py-1.5 text-xs rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed;
+    }
+  </style>
+
+  <!-- CREAR HABITACIÓN -->
+  <div *ngIf="crearOpen()"
+    class="fixed inset-0 modal-bg bg-black/40 flex items-center justify-center z-50 p-4">
+    
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5 animate-fadeIn">
+
+      <h2 class="text-xl font-semibold text-slate-800">Crear habitación</h2>
+
+      <div class="space-y-3">
+        <select class="input" [(ngModel)]="nuevaForm.id_tipo">
+          <option [ngValue]="null">Seleccionar tipo</option>
+          <option *ngFor="let t of tipos()" [ngValue]="t.id_tipo">
+            {{ t.nombre }}
+          </option>
+        </select>
+
+        <input class="input" placeholder="Número" [(ngModel)]="nuevaForm.numero_habitacion"/>
+        <input class="input" placeholder="Piso" type="number" [(ngModel)]="nuevaForm.piso"/>
+        <input class="input" placeholder="Tarifa base" type="number" [(ngModel)]="nuevaForm.tarifa_base"/>
+        <textarea class="input" placeholder="Notas" [(ngModel)]="nuevaForm.notas"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button class="btn-soft border-slate-300" (click)="cerrarCrear()">Cancelar</button>
+        <button class="px-4 py-2 bg-brand_primary text-white rounded-lg hover:shadow-md"
+          (click)="crearHabitacion()">
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- EDITAR -->
+  <div *ngIf="editarOpen()"
+    class="fixed inset-0 modal-bg bg-black/40 flex items-center justify-center z-50 p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5 animate-fadeIn">
+
+      <h2 class="text-xl font-semibold text-slate-800">Editar habitación</h2>
+
+      <div class="space-y-3">
+        <input class="input" placeholder="Número" [(ngModel)]="editando().numero_habitacion"/>
+        <input class="input" placeholder="Piso" type="number" [(ngModel)]="editando().piso"/>
+        <input class="input" placeholder="Tarifa base" type="number" [(ngModel)]="editando().tarifa_base"/>
+        <textarea class="input" placeholder="Notas" [(ngModel)]="editando().notas"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button class="btn-soft border-slate-300" (click)="cerrarEditar()">Cancelar</button>
+        <button class="px-4 py-2 bg-brand_primary text-white rounded-lg hover:shadow-md"
+          (click)="guardarEdicion()">
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

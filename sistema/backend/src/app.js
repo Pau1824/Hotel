@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+dotenv.config();
 import { pool } from './db.js';
 
 import authRoutes from './routes/authRoutes.js';
@@ -11,10 +12,15 @@ import conceptosRoutes from './routes/conceptosRoutes.js';
 import cortesCajaRoutes from './routes/cortesCajaRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import usuariosRoutes from './routes/usuariosRoutes.js';
+import iaRoutes from './routes/ia.js';
+import habitacionesAdminRoutes from './routes/habitacionesAdminRoutes.js';
+import tiposHabitacionesRoutes from './routes/tiposHabitacionesRoutes.js';
+import hotelesRoutes from "./routes/cadenaHotelesRoutes.js";
+import cadenaUsuariosRoutes from "./routes/cadenaUsuariosRoutes.js";
 
 import { authRequired, requireRoles } from './middleware/auth.js';
 
-dotenv.config();
+//dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -42,6 +48,11 @@ app.use('/api/conceptos', authRequired, conceptosRoutes);
 app.use('/api/corte-caja', cortesCajaRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/ia', iaRoutes);
+app.use('/api/habitaciones-admin', habitacionesAdminRoutes);
+app.use('/api/tipos-habitaciones', tiposHabitacionesRoutes);
+app.use("/api/cadena", hotelesRoutes);
+app.use("/api/cadena/usuarios-locales", cadenaUsuariosRoutes);
 
 
 // Ejemplo de ruta SOLO admin_local:

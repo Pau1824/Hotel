@@ -10,6 +10,7 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { HabitacionesService } from './habitaciones.service';
 import { Router } from '@angular/router';
+import Swal from 'sweetalert2';
 
 
 interface HabitacionApi {
@@ -75,11 +76,18 @@ export class HabitacionesComponent implements OnInit {
       this.habitaciones.set(parsed);
       this.cargando.set(false);
       console.log('Habitaciones asignadas:', this.habitaciones);
+      
     },
     error: (err) => {
       console.error('Error cargando habitaciones', err);
       this.error.set('No se pudieron cargar las habitaciones.');
       this.cargando.set(false);
+      Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar las habitaciones.',
+          confirmButtonColor: '#00AEB3'
+        });
     },
   });
 }

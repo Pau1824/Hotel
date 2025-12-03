@@ -43,6 +43,73 @@ interface Reserva {
       </button>
     </div>
 
+  <!-- ========== FILTRO SUPERIOR AESTHETIC (SIN FECHAS) ========== -->
+  <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mt-4">
+
+    <!-- GRID RESPONSIVE -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <!-- Estado -->
+      <div class="flex flex-col">
+        <label class="text-xs font-medium text-slate-500 mb-1">Estado</label>
+        <select
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+                focus:outline-none focus:ring-2 focus:ring-sky-500/50
+                focus:border-sky-500 transition"
+          [(ngModel)]="filtros.estado"
+        >
+          <option value="todas">Todas</option>
+          <option value="activa">Activas</option>
+          <option value="en_curso">En curso</option>
+          <option value="finalizada">Finalizadas</option>
+          <option value="cancelada">Canceladas</option>
+        </select>
+      </div>
+
+      <!-- Nombre -->
+      <div class="flex flex-col">
+        <label class="text-xs font-medium text-slate-500 mb-1">Nombre</label>
+        <input
+          type="text"
+          placeholder="Ej: Ana"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+                focus:outline-none focus:ring-2 focus:ring-sky-500/50
+                focus:border-sky-500 transition"
+          [(ngModel)]="filtros.nombre"
+        />
+      </div>
+
+      <!-- Apellido -->
+      <div class="flex flex-col">
+        <label class="text-xs font-medium text-slate-500 mb-1">Apellido</label>
+        <input
+          type="text"
+          placeholder="Ej: López"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+                focus:outline-none focus:ring-2 focus:ring-sky-500/50
+                focus:border-sky-500 transition"
+          [(ngModel)]="filtros.apellido"
+        />
+      </div>
+
+      <!-- Habitación -->
+      <div class="flex flex-col">
+        <label class="text-xs font-medium text-slate-500 mb-1">Habitación</label>
+        <input
+          type="text"
+          placeholder="Ej: 204"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+                focus:outline-none focus:ring-2 focus:ring-sky-500/50
+                focus:border-sky-500 transition"
+          [(ngModel)]="filtros.habitacion"
+        />
+      </div>
+
+    </div>
+  </div>
+
+
+  
   <div class="card p-5">
     <!-- Encabezado de tabla (opcional mini resumen) -->
     <div class="flex items-center justify-between mb-4">
@@ -73,7 +140,7 @@ interface Reserva {
 
         <tbody>
           <tr
-            *ngFor="let r of reservas"
+            *ngFor="let r of reservasFiltradas()"
             class="group"
           >
             <!-- Folio -->
@@ -195,6 +262,17 @@ export class ReservasComponent implements OnInit, OnDestroy {
   catalogo: any[] = [];
   habitaciones: any[] = [];
 
+  // ===== FILTROS =====
+  filtros = {
+    estado: 'todas',
+    nombre: '',
+    apellido: '',
+    habitacion: '',
+    fechaInicio: '',
+    fechaFin: ''
+  };
+
+
   //drawerAbierto: boolean = false;
 
   private paramsSubscription?: Subscription;
@@ -208,70 +286,169 @@ export class ReservasComponent implements OnInit, OnDestroy {
 
 
   ngOnInit() {
-    console.log("🟢 ngOnInit - ReservasComponent inicializado");
+    console.log(" ngOnInit - ReservasComponent inicializado");
     
-    // ✅ MÉTODO ALTERNATIVO: Suscribirse a queryParams
+    //  MÉTODO ALTERNATIVO: Suscribirse a queryParams
     // Esto se dispara cada vez que la ruta cambia
     this.paramsSubscription = this.route.queryParams.subscribe(() => {
-      console.log("🔄 Route params cambió, recargando...");
+      console.log(" Route params cambió, recargando...");
       this.cargarReservas();
     });
 
-    // ✅ Carga inicial también
+    //  Carga inicial también
     this.cargarReservas();
   }
 
   ngOnDestroy() {
-    // ✅ Limpiar la suscripción al destruir el componente
+    //  Limpiar la suscripción al destruir el componente
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
     }
   }
 
-  // ✅ TrackBy para mejor performance
+  //  TrackBy para mejor performance
   trackByReserva(index: number, reserva: any): any {
     return reserva.id_reservacion || index;
   }
 
   cargarReservas() {
-  console.log("📥 Cargando reservas...");
+  console.log(" Cargando reservas...");
   
   this.http.get<any[]>('http://localhost:5000/api/reservas').subscribe({
     next: (data) => {
-      console.log('✅ Backend respondió con', data.length, 'reservas');
-      console.log('📋 Primera reserva RAW del backend:', data[0]);
+      console.log(' Backend respondió con', data.length, 'reservas');
+      console.log(' Primera reserva RAW del backend:', data[0]);
       
-      // ✅ El backend YA envía los datos con los nombres correctos (usando AS)
+      //  El backend YA envía los datos con los nombres correctos (usando AS)
       // nombre, apellido1, apellido2, llegada, salida, etc.
       const reservasProcesadas = data.map((r) => {
         return {
           ...r,
-          // ✅ NO necesitas mapear nada porque el backend ya usa AS
+          //  NO necesitas mapear nada porque el backend ya usa AS
           // Solo calcula las noches
           noches: Math.ceil((new Date(r.salida).getTime() - new Date(r.llegada).getTime()) / (1000 * 3600 * 24)),
         };
       });
 
-      console.log('📋 Primera reserva procesada:', reservasProcesadas[0]);
+      console.log(' Primera reserva procesada:', reservasProcesadas[0]);
 
       this.reservas = reservasProcesadas;
       this.cdr.detectChanges();
 
-      console.log('✅ Reservas cargadas:', this.reservas.length);
+      console.log(' Reservas cargadas:', this.reservas.length);
     },
     error: (err) => {
-      console.error('❌ Error cargando reservas:', err);
+      console.error(' Error cargando reservas:', err);
     },
   });
 }
 
 
+reservasFiltradas() {
+  const f = this.filtros;
+  const lista = this.reservas; // ← sin paréntesis
+
+  const nombreFiltro = (f.nombre || '').trim().toLowerCase();
+  const apellidoFiltro = (f.apellido || '').trim().toLowerCase();
+  const habFiltro = (f.habitacion || '').trim().toLowerCase();
+
+  console.log('Reservas crudas:', this.reservas);
+  console.log('Filtros:', this.filtros);
+  
+
+
+  return lista.filter((r: any) => {
+    // ====== NORMALIZAR CAMPOS SEGÚN LO QUE VENGA ======
+    const nombre = (
+      r.nombre_huesped ??
+      r.nombre ??
+      r.huesped ??
+      ''
+    ).toString().toLowerCase();
+
+    const apellido = (
+      r.apellido1 ??
+      r.apellido ??
+      ''
+    ).toString().toLowerCase();
+
+    const habitacion = (
+      r.numero_habitacion ??
+      r.habitacion ??
+      ''
+    ).toString().toLowerCase();
+
+    const estado = (r.estado || '').toLowerCase();
+
+    // ====== FILTRO POR ESTADO ======
+    if (f.estado !== 'todas' && estado !== f.estado) {
+      return false;
+    }
+
+    // ====== FILTRO POR NOMBRE ======
+    if (nombreFiltro && !nombre.includes(nombreFiltro)) {
+      return false;
+    }
+
+    // ====== FILTRO POR APELLIDO ======
+    if (apellidoFiltro && !apellido.includes(apellidoFiltro)) {
+      return false;
+    }
+
+    // ====== FILTRO POR HABITACIÓN (match parcial) ======
+    if (habFiltro && !habitacion.includes(habFiltro)) {
+      return false;
+    }
+
+    // ====== FILTRO POR FECHAS ======
+    const parse = (value: any): Date | null => {
+      if (!value) return null;
+
+      // Caso ISO o YYYY-MM-DD
+      if (typeof value === 'string' && value.includes('-')) {
+        const fechaLimpia = value.split('T')[0];
+        return new Date(fechaLimpia);
+      }
+
+      // Caso DD/MM/YYYY
+      if (value.includes('/')) {
+        const [d, m, y] = value.split('/');
+        return new Date(`${y}-${m}-${d}`);
+      }
+
+      return null;
+    };
+
+    const checkIn = parse(r.check_in);
+    const checkOut = parse(r.check_out);
+
+    if (f.fechaInicio) {
+      const fi = new Date(f.fechaInicio);
+      if (!checkIn || checkIn < fi) return false;
+    }
+
+    if (f.fechaFin) {
+      const ff = new Date(f.fechaFin);
+      if (!checkOut || checkOut > ff) return false;
+    }
+
+
+console.log("APELLIDO RAW:", r.apellido1_huesped, r.apellido, r.apellidos);
+console.log("CHECK IN RAW:", r.check_in, "CHECK OUT RAW:", r.check_out);
+
+    return true;
+  });
+}
+
+
+
+
  abrirDetalle(id: number) {
-    console.log("🔵 CLICK EN VER DETALLE", id);
+    console.log(" CLICK EN VER DETALLE", id);
     
     // Evitar múltiples clics mientras carga
     if (this.cargandoDetalle) {
-      console.log("⚠️ Ya se está cargando un detalle");
+      console.log(" Ya se está cargando un detalle");
       return;
     }
 
@@ -285,7 +462,7 @@ export class ReservasComponent implements OnInit, OnDestroy {
     this.idSeleccionado = id;
     this.cargandoDetalle = true;
 
-    console.log("📡 Iniciando peticiones HTTP...");
+    console.log(" Iniciando peticiones HTTP...");
 
     // Usar setTimeout para asegurar que Angular procese el cierre
     setTimeout(() => {
@@ -296,7 +473,7 @@ export class ReservasComponent implements OnInit, OnDestroy {
         catalogo: this.http.get<any[]>(`http://localhost:5000/api/conceptos/catalogo-movimientos`)
       }).subscribe({
         next: (resultado) => {
-          console.log("✅ Todos los datos cargados:", resultado);
+          console.log(" Todos los datos cargados:", resultado);
 
           // Mapear la reserva
           const reserva = resultado.reserva;
@@ -320,21 +497,21 @@ export class ReservasComponent implements OnInit, OnDestroy {
           this.habitaciones = resultado.habitaciones || [];
           this.catalogo = resultado.catalogo || [];
 
-          console.log("📦 Reserva mapeada:", this.reservaSeleccionada);
-          console.log("📦 Movimientos:", this.movimientos.length);
-          console.log("📦 Habitaciones:", this.habitaciones.length);
-          console.log("📦 Catálogo:", this.catalogo.length);
+          console.log(" Reserva mapeada:", this.reservaSeleccionada);
+          console.log(" Movimientos:", this.movimientos.length);
+          console.log(" Habitaciones:", this.habitaciones.length);
+          console.log(" Catálogo:", this.catalogo.length);
 
           // Esperar un tick más antes de abrir
           setTimeout(() => {
             this.detalleAbierto = true;
             this.cargandoDetalle = false;
             this.cdr.detectChanges();
-            console.log("🟢 Detalle abierto:", this.detalleAbierto);
+            console.log(" Detalle abierto:", this.detalleAbierto);
           }, 50);
         },
         error: (err) => {
-          console.error("❌ Error cargando datos del detalle:", err);
+          console.error(" Error cargando datos del detalle:", err);
           alert("Error al cargar los detalles de la reserva");
           this.cargandoDetalle = false;
           this.detalleAbierto = false;
@@ -356,7 +533,7 @@ cerrarDetalle() {
 onCambiosReserva(actualizada: any) {
   if (!actualizada) return;
 
-  console.log('🟣 cambiosGuardados recibido en el padre:', actualizada);
+  console.log(' cambiosGuardados recibido en el padre:', actualizada);
 
   this.reservas = this.reservas.map(r =>
     r.id_reservacion === actualizada.id_reservacion

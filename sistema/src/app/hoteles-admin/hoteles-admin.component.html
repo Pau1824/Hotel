@@ -1,0 +1,125 @@
+<div class="max-w-6xl mx-auto p-6 space-y-8">
+
+  <!-- HEADER -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">
+        Hoteles
+      </h1>
+      <p class="text-sm text-slate-500">Administración de cadena</p>
+    </div>
+
+    <button
+      class="px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-medium shadow-sm hover:bg-sky-700 transition"
+      (click)="crearOpen = true"
+    >
+      + Nuevo hotel
+    </button>
+  </div>
+
+  <!-- LISTA -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-slate-500 border-b border-slate-200">
+        <tr class="text-left">
+          <th class="px-4 py-3 font-medium">Código</th>
+          <th class="px-4 py-3 font-medium">Nombre</th>
+          <th class="px-4 py-3 font-medium">Ubicación</th>
+          <th class="px-4 py-3 font-medium">Zona</th>
+          <th class="px-4 py-3 font-medium">Estado</th>
+          <th class="px-4 py-3 font-medium text-right">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr
+          *ngFor="let h of hoteles"
+          class="border-b border-slate-100 hover:bg-slate-50 transition"
+        >
+          <td class="px-4 py-3 font-medium text-slate-800">{{ h.codigo }}</td>
+          <td class="px-4 py-3">{{ h.nombre }}</td>
+          <td class="px-4 py-3">{{ h.locacion }}</td>
+          <td class="px-4 py-3">{{ h.zonahoraria }}</td>
+
+          <!-- ESTADO -->
+          <td class="px-4 py-3">
+            <span
+              class="px-3 py-1 rounded-full text-xs font-medium"
+              [ngClass]="h.es_activo
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-slate-200 text-slate-600'"
+            >
+              {{ h.es_activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+
+          <!-- ACCIONES -->
+          <td class="px-4 py-3 text-right">
+            <button
+              *ngIf="h.es_activo"
+              (click)="cambiarEstadoHotel(h, false)"
+              class="px-3 py-1.5 rounded-lg text-sm text-white bg-rose-600 hover:bg-rose-700 transition"
+            >
+              Desactivar
+            </button>
+
+            <button
+              *ngIf="!h.es_activo"
+              (click)="cambiarEstadoHotel(h, true)"
+              class="px-3 py-1.5 rounded-lg text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition"
+            >
+              Activar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================
+        MODAL CREAR HOTEL
+  ====================== -->
+  <div
+    *ngIf="crearOpen"
+    class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4"
+  >
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Crear hotel</h2>
+
+      <div class="space-y-4">
+        <input class="input" placeholder="Código" [(ngModel)]="nuevoHotel.codigo">
+        <input class="input" placeholder="Nombre" [(ngModel)]="nuevoHotel.nombre">
+        <input class="input" placeholder="Ubicación" [(ngModel)]="nuevoHotel.locacion">
+        <input class="input" placeholder="Zona horaria" [(ngModel)]="nuevoHotel.zonahoraria">
+      </div>
+
+      <!-- BOTONES -->
+      <div class="flex justify-end gap-3 mt-6">
+        <button
+          class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300"
+          (click)="crearOpen = false"
+        >
+          Cancelar
+        </button>
+
+        <button
+          class="px-4 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-700"
+          (click)="guardarHotel()"
+        >
+          Guardar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- INPUT STYLE -->
+<style>
+  .input {
+    @apply w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+           outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500;
+  }
+</style>

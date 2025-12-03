@@ -28,18 +28,11 @@
       Movimientos
     </button>
 
-    <button
-      class="tab-btn"
-      [ngClass]="{ 'tab-btn-active': selectedTab === 'corte' }"
-      (click)="selectTab('corte')"
-    >
-      <span class="material-symbols-rounded text-base">receipt_long</span>
-      Corte de Caja
-    </button>
+  
   </div>
 
   <!-- ================== TAB ANALÍTICAS ================== -->
-  <ng-container *ngIf="selectedTab === 'analytics'">
+  <div *ngIf="selectedTab === 'analytics'" class="space-y-4">
     <!-- Filtros rango -->
     <div class="flex flex-wrap gap-3 items-center justify-between">
       <div class="text-sm text-slate-500">
@@ -50,25 +43,28 @@
       <div class="flex gap-2">
         <button
           class="chip-btn"
-          [ngClass]="{ 'chip-btn-active': selectedRange === '7d' }"
+          [ngClass]="{ 'chip-btn-active': range() === '7d' }"
           (click)="selectRange('7d')"
         >
           7 días
         </button>
+
         <button
           class="chip-btn"
-          [ngClass]="{ 'chip-btn-active': selectedRange === '30d' }"
+          [ngClass]="{ 'chip-btn-active': range() === '30d' }"
           (click)="selectRange('30d')"
         >
           30 días
         </button>
+
         <button
           class="chip-btn"
-          [ngClass]="{ 'chip-btn-active': selectedRange === 'month' }"
+          [ngClass]="{ 'chip-btn-active': range() === 'month' }"
           (click)="selectRange('month')"
         >
           Este mes
         </button>
+
       </div>
     </div>
 
@@ -200,7 +196,7 @@
         ></apx-chart>
       </div>
     </div>
-  </ng-container>
+  </div>
 
   <!-- ================== TAB MOVIMIENTOS ================== -->
   <ng-container *ngIf="selectedTab === 'movimientos'">
@@ -375,17 +371,4 @@
     </div>
   </ng-container>
 
-  <!-- ================== TAB CORTE DE CAJA ================== -->
-  <ng-container *ngIf="selectedTab === 'corte'">
-    <div class="card p-6 text-sm space-y-2">
-      <p class="text-slate-700 font-medium">Corte de Caja</p>
-      <p class="text-slate-500">
-        Aquí luego vamos a mostrar un resumen por cajero/turno con totales de
-        débitos, créditos y saldo, además de opción para exportar PDF.
-      </p>
-      <p class="text-slate-400 italic">
-        Por ahora es solo un placeholder para que el diseño quede armado. 🧱
-      </p>
-    </div>
-  </ng-container>
 </div>

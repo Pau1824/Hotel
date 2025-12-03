@@ -4,7 +4,7 @@ import { authRequired } from '../middleware/auth.js';
 
 const router = express.Router();
 
-console.log("🟢 CARGANDO ARCHIVO reservasRoutes.js CORRECTO");
+console.log(" CARGANDO ARCHIVO reservasRoutes.js CORRECTO");
 
 
 // GET /api/reservas/folio - Generar folio automático por hotel
@@ -54,7 +54,7 @@ router.get('/folio/siguiente', authRequired, async (req, res) => {
     return res.json({ folio: folioNuevo });
 
   } catch (error) {
-    console.error("❌ Error generando folio:", error);
+    console.error(" Error generando folio:", error);
     res.status(500).json({ error: "Error generando folio" });
   }
 });
@@ -145,7 +145,7 @@ router.post('/', authRequired, async (req, res) => {
 
     const total_camas_extra = camas_extra * precio_cama_extra * noches;
 
-    // 🔥 TOTAL FINAL
+    //  TOTAL FINAL
     const total = tarifa * noches + total_camas_extra;
 
 
@@ -288,7 +288,7 @@ router.get('/siguiente-folio', authRequired, async (req, res) => {
 router.get('/habitaciones/disponibles', authRequired, async (req, res) => {
   const { llegada, salida } = req.query;
 
-  console.log('🔍 Consultando disponibilidad:', { llegada, salida });
+  console.log(' Consultando disponibilidad:', { llegada, salida });
 
   if (!llegada || !salida) {
     return res.status(400).json({ error: 'Se requieren fechas de llegada y salida' });
@@ -310,22 +310,22 @@ router.get('/habitaciones/disponibles', authRequired, async (req, res) => {
       ORDER BY h.numero_habitacion
     `, [llegada, salida]);
 
-    console.log(`✅ Encontradas ${rows.length} habitaciones disponibles`);
+    console.log(` Encontradas ${rows.length} habitaciones disponibles`);
 
     return res.json(rows);
   } catch (error) {
-    console.error('❌ Error consultando disponibilidad:', error);
+    console.error(' Error consultando disponibilidad:', error);
     return res.status(500).json({ error: 'Error al consultar disponibilidad' });
   }
 });
 
 
 /* ============================================================
-   🔥 POST /api/reservas  - Crear reserva con TODAS las validaciones
+    POST /api/reservas  - Crear reserva con TODAS las validaciones
    ============================================================ */
 router.post('/', authRequired, async (req, res) => {
   const r = req.body;
-  console.log('🟦 BODY RECIBIDO:', r);
+  console.log(' BODY RECIBIDO:', r);
 
   // =============================
   // 1. Validaciones de payload
@@ -348,7 +348,7 @@ router.post('/', authRequired, async (req, res) => {
   inDate.setHours(0, 0, 0, 0);
   outDate.setHours(0, 0, 0, 0);
 
-  console.log('🔍 Backend - Validación de fechas:', {
+  console.log(' Backend - Validación de fechas:', {
     llegada: r.llegada,
     salida: r.salida,
     hoy: hoy.toISOString().split('T')[0],
@@ -455,7 +455,7 @@ router.post('/', authRequired, async (req, res) => {
     const totalCamas = Number(r.total_camas_extra || 0);
     const total = Number(r.total_pagar || 0);
 
-    console.log("🟩 Usando total del FRONT:", total);
+    console.log(" Usando total del FRONT:", total);
 
     /* =========================================
        8. Insertar reserva
@@ -495,11 +495,13 @@ router.post('/', authRequired, async (req, res) => {
 
     const id_reservacion = insert.rows[0].id_reservacion;
 
+    const idUsuario = req.user?.id_usuario || null;
+
     // Movimiento inicial
     await client.query(`
-      INSERT INTO movimientos (id_reservacion, tipo, descripcion, cantidad, moneda)
-      VALUES ($1,'cargo','Renta',$2,'MXN')
-    `, [id_reservacion, total]);
+      INSERT INTO movimientos (id_reservacion, id_concepto, tipo, descripcion, cantidad, moneda, creado_por)
+      VALUES ($1,13,'cargo','Renta',$2,'MXN', $3)
+    `, [id_reservacion, total, idUsuario]);
 
     await client.query('COMMIT');
 
@@ -610,7 +612,7 @@ router.post('/:id/movimientos', authRequired, async (req, res) => {
   });
 
   try {
-    // ✅ PRIMERO: Verificar el estado de la reserva
+    //  PRIMERO: Verificar el estado de la reserva
     const { rows: reservaRows } = await pool.query(
       `SELECT estado FROM reservaciones WHERE id_reservacion = $1`,
       [id]
@@ -620,7 +622,7 @@ router.post('/:id/movimientos', authRequired, async (req, res) => {
       return res.status(404).json({ error: "Reserva no encontrada" });
     }
 
-    const estado = reservaRows[0].estado; // ✅ AHORA SÍ EXISTE
+    const estado = reservaRows[0].estado; //  AHORA SÍ EXISTE
 
     // 2) Bloquear si está cancelada o finalizada
     if (estado === 'cancelada' || estado === 'finalizada') {
@@ -650,11 +652,11 @@ router.post('/:id/movimientos', authRequired, async (req, res) => {
 
     const { rows } = await pool.query(sql, params);
 
-    console.log("✅ Movimiento registrado exitosamente:", rows[0]);
+    console.log(" Movimiento registrado exitosamente:", rows[0]);
 
     return res.json({ mensaje: "Movimiento registrado", movimiento: rows[0] });
   } catch (e) {
-    console.error("❌ ERROR REAL en POST /reservas/:id/movimientos");
+    console.error(" ERROR REAL en POST /reservas/:id/movimientos");
     console.error("Mensaje:", e.message);
     console.error("Detalle:", e.detail);
     console.error("Código:", e.code);
@@ -868,8 +870,8 @@ router.post('/:id/checkout', authRequired, async (req, res) => {
       return res.status(404).json({ error: 'Reserva no existe' });
     }
 
-    const reserva = rsv[0];                    // 👈 AQUÍ usamos rsv, no rows
-    const { estado, id_habitacion } = reserva; // 👈 recuperamos estado y hab
+    const reserva = rsv[0];                    //  AQUÍ usamos rsv, no rows
+    const { estado, id_habitacion } = reserva; //  recuperamos estado y hab
 
     console.log('🔹 Checkout reserva:', reserva);
 
@@ -918,7 +920,7 @@ router.post('/:id/checkout', authRequired, async (req, res) => {
       [id_habitacion]
     );
 
-    console.log('🏨 Habitacion liberada:', roomRows[0]);
+    console.log(' Habitacion liberada:', roomRows[0]);
 
     // 5) (Opcional) registrar un movimiento “Check-out” informativo
     await pool.query(
@@ -1190,7 +1192,7 @@ router.put('/:id', authRequired, async (req, res) => {
     const iva   = Number((subtotal * IVA_RATE).toFixed(2));
     const total = Number((subtotal + iva).toFixed(2));
 
-    console.log('💰 CÁLCULOS REAGENDAR:', {
+    console.log(' CÁLCULOS REAGENDAR:', {
       noches,
       adultos,
       ninos,
@@ -1364,11 +1366,12 @@ router.put('/:id/cancelar', authRequired, async (req, res) => {
     // =============================
     // 3) Registrar movimiento auditoría
     // =============================
+    const idUsuario = req.user?.id_usuario || null;
     await pool.query(`
       INSERT INTO movimientos 
-      (id_reservacion, tipo, descripcion, cantidad, moneda)
-      VALUES ($1, 'cargo', 'Cancelación de reserva', 0, 'MXN')
-    `, [id]);
+      (id_reservacion, id_concepto, tipo, descripcion, cantidad, moneda, creado_por)
+      VALUES ($1, 14, 'cargo', 'Cancelación de reserva', 0, 'MXN', $2)
+    `, [id, idUsuario]);
 
     // =============================
     // 4) Cambiar estado de la reserva

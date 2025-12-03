@@ -1,0 +1,139 @@
+<div class="max-w-6xl mx-auto p-6 space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold text-slate-900">
+        Usuarios admin_local
+      </h1>
+      <p class="text-sm text-slate-500">Administración de usuarios por hotel</p>
+    </div>
+
+    <button
+      class="px-4 py-2 bg-sky-600 text-white rounded-lg shadow-sm hover:bg-sky-700 transition"
+      (click)="abrirNuevo()">
+      + Nuevo admin_local
+    </button>
+  </div>
+
+  <!-- Tabla -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 border-b border-slate-200">
+        <tr class="text-left text-slate-500">
+          <th class="px-4 py-3 font-medium">Usuario</th>
+          <th class="px-4 py-3 font-medium">Nombre completo</th>
+          <th class="px-4 py-3 font-medium">Hotel</th>
+          <th class="px-4 py-3 font-medium">Estado</th>
+          <th class="px-4 py-3 font-medium text-right">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr *ngIf="cargando">
+          <td colspan="5" class="px-4 py-6 text-center text-slate-500">
+            Cargando...
+          </td>
+        </tr>
+
+        <tr *ngFor="let u of usuarios" class="border-b border-slate-100 hover:bg-slate-50 transition">
+
+          <td class="px-4 py-3 text-slate-900">{{ u.usuario }}</td>
+          <td class="px-4 py-3 text-slate-900">{{ u.nombre }} {{ u.apellido }}</td>
+          <td class="px-4 py-3 text-slate-700">{{ u.hotel_nombre }}</td>
+
+          <td class="px-4 py-3">
+            <span
+              class="px-3 py-1 rounded-full text-xs font-medium"
+              [ngClass]="u.es_activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'">
+              {{ u.es_activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3 text-right space-x-4">
+            <button
+              class="text-sky-600 hover:text-sky-700"
+              (click)="abrirEditar(u)">
+              Editar
+            </button>
+
+            <button
+              *ngIf="u.es_activo"
+              class="text-rose-600 hover:text-rose-700 font-medium"
+              (click)="cambiarEstado(u,false)">
+              Desactivar
+            </button>
+
+            <button
+              *ngIf="!u.es_activo"
+              class="text-emerald-600 hover:text-emerald-700 font-medium"
+              (click)="cambiarEstado(u,true)">
+              Activar
+            </button>
+          </td>
+
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== MODAL CREAR ===== -->
+  <div *ngIf="nuevoVisible" class="modal-overlay">
+    <div class="modal-container">
+      <h2 class="modal-title">Nuevo admin_local</h2>
+
+      <div class="space-y-3">
+        <input class="input" placeholder="Usuario" [(ngModel)]="nuevo.usuario">
+        <input class="input" placeholder="Nombre" [(ngModel)]="nuevo.nombre">
+        <input class="input" placeholder="Apellido" [(ngModel)]="nuevo.apellido">
+        <input class="input" placeholder="Teléfono" [(ngModel)]="nuevo.telefono">
+        <input class="input" placeholder="Correo" [(ngModel)]="nuevo.correo">
+
+        <select class="input" [(ngModel)]="nuevo.id_hotel">
+          <option [ngValue]="null">Seleccionar hotel</option>
+          <option *ngFor="let h of hoteles" [ngValue]="h.id_hotel">{{ h.nombre }}</option>
+        </select>
+
+        <input class="input" type="password" placeholder="Contraseña" [(ngModel)]="nuevo.contrasena">
+        <input class="input" type="password" placeholder="Repetir contraseña" [(ngModel)]="nuevo.repetir">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="nuevoVisible=false">Cancelar</button>
+        <button class="btn-primary" (click)="guardarNuevo()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL EDITAR ===== -->
+  <div *ngIf="editarVisible" class="modal-overlay">
+    <div class="modal-container">
+      <h2 class="modal-title">Editar usuario</h2>
+
+      <div class="space-y-3">
+        <input class="input" placeholder="Usuario" [(ngModel)]="editar.usuario">
+        <input class="input" placeholder="Nombre" [(ngModel)]="editar.nombre">
+        <input class="input" placeholder="Apellido" [(ngModel)]="editar.apellido">
+        <input class="input" placeholder="Teléfono" [(ngModel)]="editar.telefono">
+        <input class="input" placeholder="Correo" [(ngModel)]="editar.correo">
+
+        <select class="input" [(ngModel)]="editar.id_hotel">
+          <option *ngFor="let h of hoteles" [ngValue]="h.id_hotel">
+            {{ h.nombre }}
+          </option>
+        </select>
+
+        <input class="input" type="password" placeholder="Nueva contraseña" [(ngModel)]="editar.nuevaContrasena">
+        <input class="input" type="password" placeholder="Repetir contraseña" [(ngModel)]="editar.repetir">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="editarVisible=false">Cancelar</button>
+        <button class="btn-primary" (click)="guardarEdicion()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>

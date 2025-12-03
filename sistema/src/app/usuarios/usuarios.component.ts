@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { UsuariosService, Usuario } from './usuarios.service';
 import { FormsModule } from '@angular/forms'; 
+import Swal from 'sweetalert2';
 import { CommonModule, NgIf,
   NgFor,
   NgClass,
@@ -168,7 +169,12 @@ export class UsuariosComponent implements OnInit {
           this.cargando = false;
         },
         error: (err) => {
-          console.error('Error cargando usuarios', err);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al cargar usuarios',
+            text: err.error?.error || 'No se pudieron cargar los usuarios.',
+            confirmButtonColor: '#0f766e'
+          });
           this.cargando = false;
         },
       });
@@ -226,7 +232,12 @@ export class UsuariosComponent implements OnInit {
           this.cargarUsuarios();
         },
         error: (err) => {
-          console.error('Error actualizando estado de usuario', err);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al actualizar estado',
+            text: err.error?.error || 'No se pudo actualizar el estado del usuario.',
+            confirmButtonColor: '#0f766e'
+          });
         },
       });
   }
@@ -281,46 +292,86 @@ async guardarNuevoUsuario() {
   u.correo   = u.correo.trim();
 
   if (!u.usuario || !u.nombre || !u.apellido || !u.contrasena || !u.repetirContrasena) {
-    alert('Llena todos los campos obligatorios.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos incompletos',
+      text: 'Llena todos los campos obligatorios.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   // -------- Usuario: letras y números, al menos una letra
   if (!this.usernameRegex.test(u.usuario)) {
-    alert('El usuario solo puede tener letras y números y debe incluir al menos una letra.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'El usuario solo puede tener letras y números y debe incluir al menos una letra.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   // -------- Nombre y apellidos: solo letras
   if (!this.nombreRegex.test(u.nombre)) {
-    alert('El nombre solo puede contener letras y espacios.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'El nombre solo puede contener letras y espacios.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   if (!this.nombreRegex.test(u.apellido)) {
-    alert('Los apellidos solo pueden contener letras y espacios.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'El apellido solo puede contener letras y espacios.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   // -------- Teléfono: opcional, pero si viene debe ser 10 dígitos
   if (u.telefono && !this.telefonoRegex.test(u.telefono)) {
-    alert('El teléfono debe tener exactamente 10 dígitos (sin espacios ni símbolos).');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'El teléfono debe tener exactamente 10 dígitos (sin espacios ni símbolos).',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   // -------- Correo: opcional, pero si viene debe tener formato válido
   if (u.correo && !this.emailRegex.test(u.correo)) {
-    alert('Escribe un correo válido, por ejemplo: usuario@hotel.com');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'Escribe un correo válido, por ejemplo: usuario@hotel.com',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   if (u.contrasena.length < 6) {
-    alert('La contraseña debe tener al menos 6 caracteres.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'La contraseña debe tener al menos 6 caracteres.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   if (u.contrasena !== u.repetirContrasena) {
-    alert('Las contraseñas no coinciden.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'Las contraseñas no coinciden .',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
@@ -362,7 +413,12 @@ async guardarNuevoUsuario() {
     error: (err) => {
       console.error('Error creando usuario:', err);
       this.guardando = false;
-      alert(err.error?.error || 'Error al crear usuario');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar usuario',
+        text: err.error?.error || 'Error al actualizar usuario',
+        confirmButtonColor: '#e11d48'
+      });
     },
   });
 }
@@ -414,36 +470,66 @@ guardarEdicionUsuario() {
 
   // Validaciones básicas (puedes reutilizar las de crear)
   if (!u.usuario || !u.nombre || !u.apellido) {
-    alert('Llena todos los campos obligatorios.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos incompletos',
+      text: 'Llena todos los campos obligatorios.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   // === Usuario: letras y números, al menos una letra ===
   if (!this.usernameRegex.test(u.usuario)) {
-    alert('El usuario solo puede tener letras y números y debe incluir al menos una letra.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'El usuario solo puede tener letras y números y debe incluir al menos una letra.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   // === Nombre y apellidos: solo letras (reutilizamos nombreRegex) ===
   if (!this.nombreRegex.test(u.nombre)) {
-    alert('El nombre solo puede contener letras y espacios.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'El nombre solo puede contener letras y espacios.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   if (!this.nombreRegex.test(u.apellido)) {
-    alert('Los apellidos solo pueden contener letras y espacios.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'El apellido solo puede contener letras y espacios.',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   // teléfono solo números y 10 dígitos (si no viene vacío)
   if (u.telefono && !/^\d{10}$/.test(u.telefono)) {
-    alert('El teléfono debe tener exactamente 10 dígitos.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'El teléfono debe tener exactamente 10 dígitos (sin espacios ni símbolos).',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
   // correo opcional pero, si viene, con formato válido
   if (u.correo && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(u.correo)) {
-    alert('Ingresa un correo válido.');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Usuario inválido',
+      text: 'Escribe un correo válido, por ejemplo: usuario@hotel.com',
+      confirmButtonColor: '#0f766e'
+    });
     return;
   }
 
@@ -451,11 +537,21 @@ guardarEdicionUsuario() {
 
   if (quiereCambiarPass) {
     if (u.nuevaContrasena.length < 6) {
-      alert('La nueva contraseña debe tener al menos 6 caracteres.');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Usuario inválido',
+        text: 'La contraseña debe tener al menos 6 caracteres.',
+        confirmButtonColor: '#0f766e'
+      });
       return;
     }
     if (u.nuevaContrasena !== u.repetirContrasena) {
-      alert('Las contraseñas no coinciden.');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Usuario inválido',
+        text: 'Las contraseñas no coinciden .',
+        confirmButtonColor: '#0f766e'
+      });
       return;
     }
   }
@@ -488,8 +584,13 @@ guardarEdicionUsuario() {
       },
       error: (err) => {
         console.error('Error actualizando usuario', err);
-        this.guardandoEdicion = false;   // 👈 importantísimo
-        alert(err.error?.error || 'Error al actualizar usuario');
+        this.guardandoEdicion = false;   //  importantísimo
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al actualizar usuario',
+          text: err.error?.error || 'Error al actualizar usuario',
+          confirmButtonColor: '#e11d48'
+        });
       },
     });
 }

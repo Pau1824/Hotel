@@ -2,11 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet, RouterLink } from '@angular/router';
 import { NgClass, NgIf } from '@angular/common';
 import { AuthService } from '../auth.service';
+import { IaHelpComponent } from '../ia-help/ia-help.component';
+
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, NgClass, NgIf],
+  imports: [RouterOutlet, RouterLink, NgClass, NgIf, IaHelpComponent],
   template: `
   <div class="flex h-screen bg-slate-50">
 
@@ -30,6 +32,7 @@ import { AuthService } from '../auth.service';
       </div>
 
       <nav class="p-4 space-y-2 text-sm">
+      <ng-container *ngIf="!esAdminCadena()">
       <!-- MÓDULOS COMUNES (admin y recepcionista) -->
         <a routerLink="/dashboard"
           class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100"
@@ -73,6 +76,38 @@ import { AuthService } from '../auth.service';
             <span class="material-symbols-rounded">tune</span> Config. Habitaciones
           </a>
         </ng-container>
+        </ng-container>
+
+        <!-- ADMIN CADENA -->
+        <ng-container *ngIf="esAdminCadena()">
+
+          <div class="mt-4 pt-4 border-t border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+            Administración de cadena
+          </div>
+
+          <a
+            routerLink="/hoteles-admin"
+            class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition"
+            routerLinkActive="bg-slate-100 font-medium"
+          >
+            <span class="material-symbols-rounded text-slate-700">
+              apartment
+            </span>
+            Hoteles
+          </a>
+
+          <a 
+            routerLink="/usuarios-admin-local"
+            class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100"
+            routerLinkActive="bg-slate-100 font-medium">
+            <span class="material-symbols-rounded">shield_person</span>
+            Usuarios Admin Local
+          </a>
+
+
+        </ng-container>
+
+
       </nav>
 
       <button 
@@ -98,6 +133,8 @@ import { AuthService } from '../auth.service';
         <router-outlet></router-outlet>
       </div>
 
+      <app-ia-help></app-ia-help>
+
     </main>
   </div>
   `,
@@ -108,6 +145,7 @@ export class LayoutComponent {
 
   private auth = inject(AuthService);
   private router = inject(Router);
+  user = this.auth.currentUser;
 
   constructor() {
     // Cuando el usuario navega → cerrar sidebar en móvil
@@ -122,6 +160,18 @@ export class LayoutComponent {
 
   isAdmin(): boolean {
     return this.auth.isAdmin();
+  }
+
+  esAdminCadena() {
+    return this.user?.rol === "admin_cadena";
+  }
+
+  esAdminLocal() {
+    return this.user?.rol === 'admin_local';
+  }
+
+  esRecepcionista() {
+    return this.user?.rol === 'recepcionista';
   }
 
   logout() {

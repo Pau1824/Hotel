@@ -1,84 +1,72 @@
-<div class="max-w-6xl mx-auto flex flex-col gap-6">
-  <!-- ENCABEZADO -->
-  <div class="flex flex-col gap-2">
-    <h1 class="text-2xl font-semibold text-slate-900">
-      Usuarios del hotel
-    </h1>
-    <p class="text-sm text-slate-500">
-      Solo se muestran usuarios del hotel actual.
-    </p>
+<div class="max-w-6xl mx-auto flex flex-col gap-6 px-4 sm:px-6 lg:px-0">
+
+  <!-- ================= ENCABEZADO ================= -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-slate-900">Usuarios del hotel</h1>
+      <p class="text-sm text-slate-500">
+        Solo se muestran usuarios del hotel actual.
+      </p>
+    </div>
+
+    <!-- BOTÓN NUEVO USUARIO -->
+    <button
+      class="w-full md:w-auto px-4 py-2 rounded-lg text-sm font-medium bg-sky-600 text-white hover:bg-sky-700 transition shadow-sm"
+      (click)="abrirNuevoUsuario()">
+      + Nuevo usuario
+    </button>
   </div>
 
-  <!-- BOTÓN NUEVO USUARIO -->
-  <button
-    class="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
-    (click)="abrirNuevoUsuario()">
-    + Nuevo usuario
-  </button>
-
-  <!-- ========== MODAL EDITAR USUARIO ========== -->
+  <!-- ================= MODAL EDITAR ================= -->
   <ng-container *ngIf="editarVisible">
-    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-      <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6">
+    <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl sm:max-w-2xl p-5 sm:p-6">
+
         <h2 class="text-lg font-semibold text-slate-800 mb-4">
           Editar usuario recepcionista
         </h2>
 
-        <!-- FORM CAMPOS -->
-        <div class="grid md:grid-cols-2 gap-4">
+        <!-- GRID RESPONSIVE -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
           <!-- Usuario -->
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">
-              Usuario *
-            </label>
+          <div class="col-span-1 sm:col-span-2">
+            <label class="block text-xs font-medium text-slate-500 mb-1">Usuario *</label>
             <input
               type="text"
-              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              class="input-field"
               [(ngModel)]="editarUsuario.usuario"
               name="usuarioEditar"
-              autocomplete="off"
             />
           </div>
 
-          <!-- espacio para que cuadre el grid -->
-          <div></div>
-
-          <!-- Nombre(s) -->
+          <!-- Nombre -->
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">
-              Nombre(s) *
-            </label>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Nombre(s) *</label>
             <input
               type="text"
-              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              class="input-field"
               [(ngModel)]="editarUsuario.nombre"
-              name="editarNombre"
             />
           </div>
 
           <!-- Apellidos -->
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">
-              Apellidos *
-            </label>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Apellidos *</label>
             <input
               type="text"
-              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              class="input-field"
               [(ngModel)]="editarUsuario.apellido"
-              name="editarApellido"
             />
           </div>
 
           <!-- Teléfono -->
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">
-              Teléfono
-            </label>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Teléfono</label>
             <input
               type="tel"
-              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              class="input-field"
               [(ngModel)]="editarUsuario.telefono"
-              name="editarTelefono"
               maxlength="10"
               inputmode="numeric"
             />
@@ -86,62 +74,48 @@
 
           <!-- Correo -->
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">
-              Correo
-            </label>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Correo</label>
             <input
               type="email"
-              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              class="input-field"
               [(ngModel)]="editarUsuario.correo"
-              name="correoEditar"
             />
           </div>
 
-          <!-- Nueva contraseña -->
+          <!-- Nueva pass -->
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">
-              Nueva contraseña
-            </label>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Nueva contraseña</label>
             <input
               type="password"
-              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              class="input-field"
               [(ngModel)]="editarUsuario.nuevaContrasena"
-              name="passEditar"
-              autocomplete="new-password"
             />
-            <p class="text-[11px] text-slate-400 mt-1">
-              Déjalo vacío si no quieres cambiar la contraseña.
-            </p>
+            <p class="text-[11px] text-slate-400 mt-1">Déjalo vacío si no quieres cambiarla.</p>
           </div>
 
-          <!-- Repetir nueva contraseña -->
+          <!-- Repetir pass -->
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">
-              Repetir nueva contraseña
-            </label>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Repetir contraseña</label>
             <input
               type="password"
-              class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              class="input-field"
               [(ngModel)]="editarUsuario.repetirContrasena"
-              name="pass2Editar"
-              autocomplete="new-password"
             />
           </div>
+
         </div>
 
-        <!-- BOTONES MODAL -->
+        <!-- BOTONES -->
         <div class="mt-6 flex justify-end gap-3">
           <button
-            type="button"
-            class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+            class="btn-secondary"
             (click)="cancelarEditarUsuario()"
             [disabled]="guardandoEdicion">
             Cancelar
           </button>
 
           <button
-            type="button"
-            class="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            class="btn-primary"
             (click)="guardarEdicionUsuario()"
             [disabled]="guardandoEdicion">
             {{ guardandoEdicion ? 'Guardando…' : 'Guardar cambios' }}
@@ -151,19 +125,18 @@
     </div>
   </ng-container>
 
-  <!-- ========== FILTROS SUPERIORES ========== -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-    <!-- Chips estado -->
-    <div class="inline-flex rounded-full bg-slate-100 p-1">
+  <!-- ================= FILTROS ================= -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+    <!-- Chips -->
+    <div class="inline-flex rounded-full bg-slate-100 p-1 self-start">
       <button
-        type="button"
         class="chip-btn"
         [ngClass]="{ 'chip-btn-active': estadoFiltro === 'activo' }"
         (click)="setEstadoFiltro('activo')">
         Activo
       </button>
       <button
-        type="button"
         class="chip-btn"
         [ngClass]="{ 'chip-btn-active': estadoFiltro === 'inactivo' }"
         (click)="setEstadoFiltro('inactivo')">
@@ -172,14 +145,14 @@
     </div>
 
     <!-- Buscador -->
-    <div class="w-full md:w-72">
+    <div class="w-full sm:w-72">
       <div class="relative">
         <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
           search
         </span>
         <input
           type="text"
-          class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-500"
+          class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/70"
           placeholder="Buscar usuarios..."
           [(ngModel)]="search"
         />
@@ -187,198 +160,117 @@
     </div>
   </div>
 
-  <!-- ========== FORMULARIO NUEVO USUARIO ========== -->
-  <div *ngIf="nuevoVisible" class="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
-    <h2 class="text-base font-semibold text-slate-800 mb-3">
-      Nuevo usuario recepcionista
-    </h2>
+  <!-- ================= FORM NUEVO USUARIO ================= -->
+  <div *ngIf="nuevoVisible" class="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Nuevo usuario recepcionista</h2>
 
-    <div class="grid md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <!-- Usuario -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">
-          Usuario *
-        </label>
-        <input
-          type="text"
-          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          [(ngModel)]="nuevoUsuario.usuario"
-          name="usuarioNuevo"
-          autocomplete="off"
-        />
+        <label class="input-label">Usuario *</label>
+        <input class="input-field" [(ngModel)]="nuevoUsuario.usuario" />
       </div>
 
+      <!-- Teléfono -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">
-          Teléfono
-        </label>
-        <input
-          type="tel"
-          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          [(ngModel)]="nuevoUsuario.telefono"
-          name="telNuevo"
-          autocomplete="off"
-          maxlength="10"
-          inputmode="numeric"
-        />
+        <label class="input-label">Teléfono</label>
+        <input class="input-field" [(ngModel)]="nuevoUsuario.telefono" maxlength="10" />
       </div>
 
+      <!-- Nombre -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">
-          Nombre(s) *
-        </label>
-        <input
-          type="text"
-          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          [(ngModel)]="nuevoUsuario.nombre"
-          name="nombreNuevo"
-          autocomplete="off"
-        />
+        <label class="input-label">Nombre(s) *</label>
+        <input class="input-field" [(ngModel)]="nuevoUsuario.nombre" />
       </div>
 
+      <!-- Apellido -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">
-          Apellidos *
-        </label>
-        <input
-          type="text"
-          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          [(ngModel)]="nuevoUsuario.apellido"
-          name="apellidoNuevo"
-          autocomplete="off"
-        />
+        <label class="input-label">Apellidos *</label>
+        <input class="input-field" [(ngModel)]="nuevoUsuario.apellido" />
       </div>
 
+      <!-- Correo -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">
-          Correo
-        </label>
-        <input
-          type="email"
-          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          [(ngModel)]="nuevoUsuario.correo"
-          name="correoNuevo"
-          autocomplete="off"
-        />
+        <label class="input-label">Correo</label>
+        <input class="input-field" [(ngModel)]="nuevoUsuario.correo" />
       </div>
 
+      <!-- Rol -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">
-          Rol
-        </label>
-        <div class="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+        <label class="input-label">Rol</label>
+        <div class="inline-flex px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-medium">
           Recepcionista
         </div>
       </div>
 
+      <!-- Pass -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">
-          Contraseña *
-        </label>
-        <input
-          type="password"
-          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          [(ngModel)]="nuevoUsuario.contrasena"
-          name="passNuevo"
-          autocomplete="new-password"
-        />
+        <label class="input-label">Contraseña *</label>
+        <input type="password" class="input-field" [(ngModel)]="nuevoUsuario.contrasena" />
       </div>
 
+      <!-- Repetir Pass -->
       <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">
-          Repetir contraseña *
-        </label>
-        <input
-          type="password"
-          class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          [(ngModel)]="nuevoUsuario.repetirContrasena"
-          name="pass2Nuevo"
-          autocomplete="new-password"
-        />
+        <label class="input-label">Repetir contraseña *</label>
+        <input type="password" class="input-field" [(ngModel)]="nuevoUsuario.repetirContrasena" />
       </div>
     </div>
 
-    <div class="mt-4 flex justify-end gap-2">
-      <button
-        class="px-3 py-2 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
-        type="button"
-        (click)="cancelarNuevoUsuario()">
-        Cancelar
-      </button>
-      <button
-        class="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
-        type="button"
-        [disabled]="guardando"
-        (click)="guardarNuevoUsuario()">
-        {{ guardando ? 'Guardando...' : 'Guardar usuario' }}
+    <!-- BOTONES -->
+    <div class="mt-4 flex justify-end gap-3">
+      <button class="btn-secondary" (click)="cancelarNuevoUsuario()">Cancelar</button>
+      <button class="btn-primary" [disabled]="guardando" (click)="guardarNuevoUsuario()">
+        {{ guardando ? 'Guardando…' : 'Guardar usuario' }}
       </button>
     </div>
   </div>
 
-  <!-- ========== TABLA DE USUARIOS ========== -->
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-    <table class="min-w-full text-sm">
+  <!-- ================= TABLA ================= -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+    <table class="w-full min-w-[700px] text-sm">
       <thead class="bg-slate-50 border-b border-slate-200">
         <tr class="text-left text-slate-500">
-          <th class="px-4 py-3 font-medium">Usuario</th>
-          <th class="px-4 py-3 font-medium">Nombre completo</th>
-          <th class="px-4 py-3 font-medium">Teléfono</th>
-          <th class="px-4 py-3 font-medium">Rol</th>
-          <th class="px-4 py-3 font-medium">Estado</th>
-          <th class="px-4 py-3 font-medium">Último acceso</th>
-          <th class="px-4 py-3 font-medium text-right">Acciones</th>
+          <th class="px-4 py-3">Usuario</th>
+          <th class="px-4 py-3">Nombre completo</th>
+          <th class="px-4 py-3">Teléfono</th>
+          <th class="px-4 py-3">Rol</th>
+          <th class="px-4 py-3">Estado</th>
+          <th class="px-4 py-3">Último acceso</th>
+          <th class="px-4 py-3 text-right">Acciones</th>
         </tr>
       </thead>
 
       <tbody>
         <tr *ngIf="usuariosFiltrados().length === 0">
           <td colspan="7" class="px-4 py-8 text-center text-slate-400">
-            No se encontraron usuarios con los filtros actuales.
+            No se encontraron usuarios.
           </td>
         </tr>
 
-        <tr
-          *ngFor="let u of usuariosFiltrados()"
-          class="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
-          <td class="px-4 py-3 text-slate-900">
-            {{ u.usuario }}
-          </td>
-
-          <td class="px-4 py-3 text-slate-900">
-            {{ u.nombreCompleto }}
-          </td>
-
-          <td class="px-4 py-3 text-slate-700">
-            {{ u.telefono || '—' }}
-          </td>
-
+        <tr *ngFor="let u of usuariosFiltrados()" class="border-b border-slate-100 hover:bg-slate-50 transition">
+          <td class="px-4 py-3">{{ u.usuario }}</td>
+          <td class="px-4 py-3">{{ u.nombreCompleto }}</td>
+          <td class="px-4 py-3">{{ u.telefono || '—' }}</td>
           <td class="px-4 py-3">
-            <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-[11px] font-medium">
-              {{ u.rolTexto }}
+            <span class="badge-sky">{{ u.rolTexto }}</span>
+          </td>
+          <td class="px-4 py-3">
+            <span [ngClass]="u.estado === 'activo' ? 'badge-green' : 'badge-gray'">
+              {{ u.estado | titlecase }}
             </span>
           </td>
-
-          <td class="px-4 py-3">
-            <span
-              class="badge"
-              [ngClass]="u.estado === 'activo' ? 'badge-green' : 'badge-gray'">
-              {{ u.estado === 'activo' ? 'Activo' : 'Inactivo' }}
-            </span>
-          </td>
-
-          <td class="px-4 py-3 text-slate-700">
-            {{ u.ultimoAcceso ? (u.ultimoAcceso | date:'yyyy-MM-dd HH:mm') : '—' }}
-          </td>
-
-          <td class="px-6 py-4 text-sm text-right space-x-4">
-            <button
-              class="text-slate-600 hover:text-emerald-600"
-              (click)="abrirEditarUsuario(u)">
+          <td class="px-4 py-3">{{ u.ultimoAcceso ? (u.ultimoAcceso | date:'yyyy-MM-dd HH:mm') : '—' }}</td>
+          <td class="px-6 py-4 text-right space-x-4">
+            <button class="text-slate-600 hover:text-sky-600" (click)="abrirEditarUsuario(u)">
               Editar
             </button>
 
             <button
               class="font-medium"
-              [ngClass]="u.estado === 'activo' ? 'text-red-600 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-700'"
+              [ngClass]="u.estado === 'activo'
+                ? 'text-red-600 hover:text-red-700'
+                : 'text-sky-600 hover:text-sky-700'"
               (click)="u.estado === 'activo' ? desactivar(u) : activar(u)">
               {{ u.estado === 'activo' ? 'Desactivar' : 'Activar' }}
             </button>
@@ -388,3 +280,17 @@
     </table>
   </div>
 </div>
+
+<!-- ESTILOS UTILES -->
+<style>
+  .input-label { @apply block text-xs font-medium text-slate-500 mb-1; }
+  .input-field { @apply w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500; }
+  .btn-primary { @apply px-4 py-2 rounded-lg text-sm bg-sky-600 text-white hover:bg-sky-700 shadow-sm; }
+  .btn-secondary { @apply px-4 py-2 rounded-lg text-sm border border-slate-300 text-slate-700 hover:bg-slate-50; }
+  .badge-green { @apply inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-medium; }
+  .badge-gray { @apply inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium; }
+  .badge-sky { @apply inline-flex items-center px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-[11px] font-medium; }
+  .chip-btn { @apply px-4 py-1.5 rounded-full text-sm font-medium text-slate-600; }
+  .chip-btn-active { @apply bg-white shadow-sm text-sky-600; }
+</style>
+

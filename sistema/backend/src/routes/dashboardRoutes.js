@@ -11,7 +11,7 @@ router.get('/resumen', authRequired, async (req, res) => {
     // Usaremos siempre $1, que puede ser null
     const params = [scopeHotel];
 
-    // 1️⃣ SALIDAS DE HOY (check_out = hoy)
+    // 1️SALIDAS DE HOY (check_out = hoy)
     const salidasResult = await pool.query(
       `
       SELECT
@@ -24,6 +24,7 @@ router.get('/resumen', authRequired, async (req, res) => {
         ) AS realizadas
       FROM reservaciones
       WHERE check_out = CURRENT_DATE
+        AND estado IN ('activa','en_curso','finalizada')
         AND ($1::int IS NULL OR id_hotel = $1)
       `,
       params
@@ -31,7 +32,7 @@ router.get('/resumen', authRequired, async (req, res) => {
 
     const salidas = salidasResult.rows[0] || { totales: 0, realizadas: 0 };
 
-    // 2️⃣ LLEGADAS DE HOY (check_in = hoy)
+    // 2️LLEGADAS DE HOY (check_in = hoy)
     // totales: todas las reservas con check_in hoy
     // realizadas: las que ya están en_curso o finalizada
     const llegadasResult = await pool.query(
@@ -46,6 +47,7 @@ router.get('/resumen', authRequired, async (req, res) => {
         ) AS realizadas
       FROM reservaciones
       WHERE check_in = CURRENT_DATE
+        AND estado IN ('activa','en_curso','finalizada')
         AND ($1::int IS NULL OR id_hotel = $1)
       `,
       params
@@ -53,7 +55,7 @@ router.get('/resumen', authRequired, async (req, res) => {
 
     const llegadas = llegadasResult.rows[0] || { totales: 0, realizadas: 0 };
 
-    // 3️⃣ OCUPACIÓN / ESTADO DE HABITACIONES
+    // 3️OCUPACIÓN / ESTADO DE HABITACIONES
     // Usamos el campo estado de la tabla habitaciones directamente.
     const habEstadosResult = await pool.query(
       `
@@ -92,7 +94,21 @@ router.get('/resumen', authRequired, async (req, res) => {
       }
     });
 
-    // 4️⃣ ACTIVIDAD RECIENTE (últimas reservaciones)
+    // Tarifa promedio del hotel
+    const tarifaQuery = await pool.query(
+      `
+        SELECT AVG(tarifa_base)::numeric(10,2) AS tarifa_promedio
+        FROM habitaciones
+        WHERE id_hotel = $1
+          AND tarifa_base IS NOT NULL
+      `,
+      [scopeHotel]
+    );
+
+    const tarifaPromedio = Number(tarifaQuery.rows[0]?.tarifa_promedio || 0);
+
+
+    // 4️ACTIVIDAD RECIENTE (últimas reservaciones)
     const actividadResult = await pool.query(
       `
       SELECT
@@ -135,7 +151,7 @@ router.get('/resumen', authRequired, async (req, res) => {
       };
     });
 
-    // 5️⃣ RESPUESTA PARA EL FRONT
+    // 5️RESPUESTA PARA EL FRONT
     res.json({
       salidasRealizadas: Number(salidas.realizadas) || 0,
       salidasTotales: Number(salidas.totales) || 0,
@@ -152,7 +168,8 @@ router.get('/resumen', authRequired, async (req, res) => {
         { estado: 'Mantenimiento', cantidad: mantenimiento }
       ],
 
-      actividad
+      actividad,
+      tarifaPromedio 
     });
   } catch (error) {
     console.error('Error en /api/dashboard/resumen:', error);

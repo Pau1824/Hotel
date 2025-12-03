@@ -1,10 +1,11 @@
 // src/app/reportes/reportes.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, effect } from '@angular/core';
 import { CommonModule, NgIf, NgFor, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput } from 'jspdf-autotable';
+import Swal from 'sweetalert2';
 import {
   NgApexchartsModule,
   ApexAxisChartSeries,
@@ -85,6 +86,23 @@ interface MixHabitacionesRow {
   mantenimiento: number;
 }
 
+/*interface ResumenDashboard {
+  total: number;
+  ocupadas: number;
+  reservadas: number;
+  disponibles: number;
+  porcentajeOcupacion: number;
+  tarifaPromedio: number;
+  revpar: number;
+  meta: {
+    range: string;
+    roomNightsSold: number;
+    totalRoomNightsAvailable: number;
+    daysRange: number;
+  };
+}*/
+
+
 
 type TabKey = 'analytics' | 'movimientos' | 'corte';
 type RangeKey = '7d' | '30d' | 'month';
@@ -100,6 +118,8 @@ type RangeKey = '7d' | '30d' | 'month';
 export class ReportesComponent implements OnInit {
 
     private API = 'http://localhost:5000/api/reportes';
+
+    range = signal<RangeKey>('30d');
 
     // KPIs cabecera
   ocupacion = 0;          // %
@@ -158,13 +178,35 @@ export class ReportesComponent implements OnInit {
     };
 
 
-  cargando = true;
-  error = '';
-  // ===== Tabs =====
-  selectedTab: TabKey = 'analytics';
+    cargando = true;
+    error = '';
 
-  // ===== Rangos de tiempo (Analíticas) =====
-  selectedRange: RangeKey = '30d';
+    // ===== Tabs (signal con getter/setter) =====
+    private _selectedTab = signal<TabKey>('analytics');
+    get selectedTab(): TabKey {
+      return this._selectedTab();
+    }
+    set selectedTab(value: TabKey) {
+      this._selectedTab.set(value);
+    }
+
+    // ===== Rangos de tiempo (Analíticas) =====
+
+  // ===== Métodos UI =====
+  selectTab(tab: TabKey) {
+    this.selectedTab = tab;
+  }
+
+  selectRange(r: RangeKey) {
+  this.range.set(r);
+  this.cargarResumen(r);
+  this.cargarIngresosPorRango(r);
+}
+
+
+
+
+
 
   constructor(private http: HttpClient) {}
 
@@ -190,32 +232,41 @@ export class ReportesComponent implements OnInit {
   agruparPor: 'codigo' | 'cajero' = 'codigo';
   cajeroFiltro: string = 'todos';
 
-  // ===== Datos de ejemplo para movimientos =====
-  movimientos: Movimiento[] = [];
+  // ===== Datos de movimientos (signals) =====
+  private _movimientos = signal<Movimiento[]>([]);
+  get movimientos(): Movimiento[] {
+    return this._movimientos();
+  }
 
-  cajerosUnicos: string[] = [];
+  private _cajerosUnicos = signal<string[]>([]);
+  get cajerosUnicos(): string[] {
+    return this._cajerosUnicos();
+  }
 
 
   ngOnInit(): void {
-    this.initCharts();        // seguimos usando las gráficas dummy por ahora
-    this.cargarResumen(this.selectedRange);     // aquí jalamos datos reales para las cards
-    this.cargarIngresosMensuales();
-    this.cargarIngresosPorRango(this.selectedRange); // aquí
-    this.cargarOcupacionSemanal();   
-    this.cargarMixHabitaciones(); 
+    this.initCharts();
+    //this.cargarResumen(this.selectedRange);
+    //this.cargarIngresosPorRango(this.selectedRange);
+    this.cargarIngresosMensuales(); // esto es solo para gráfico mensual
+    this.cargarOcupacionSemanal();  // solo se carga 1 vez
+    this.cargarMixHabitaciones();   // solo se carga 1 vez
     this.aplicarFiltrosMovimientos();
+    this.selectRange(this.range());
     }
 
 
   // ===== Getters útiles =====
   get rangeLabel(): string {
-    switch (this.selectedRange) {
+    switch (this.range()) {
       case '7d':
         return 'Últimos 7 días';
       case '30d':
         return 'Últimos 30 días';
       case 'month':
         return 'Este mes';
+      default:
+        return '';
     }
   }
 
@@ -259,17 +310,7 @@ export class ReportesComponent implements OnInit {
 
 
   // ===== Métodos UI =====
-  selectTab(tab: TabKey) {
-    this.selectedTab = tab;
-  }
 
-  selectRange(range: RangeKey) {
-    this.selectedRange = range;
-    this.cargarResumen(range);
-    this.cargarIngresosPorRango(range);
-    // Aquí luego vas a llamar al backend:
-    // this.reportesService.getAnalytics(range).subscribe(...)
-  }
 
   aplicarFiltrosMovimientos() {
     const params: any = {
@@ -293,7 +334,7 @@ export class ReportesComponent implements OnInit {
         .subscribe({
         next: (data) => {
             console.log('Movimientos recibidos:', data);
-            this.movimientos = data;
+            this._movimientos.set(data);
 
             // sacar cajeros únicos
             const nombres = Array.from(
@@ -303,13 +344,14 @@ export class ReportesComponent implements OnInit {
                 .filter((c) => !!c) // quitar null/undefined/vacíos
             )
             );
-            this.cajerosUnicos = nombres;
+            this._cajerosUnicos.set(nombres);
         },
         error: (err) => {
             console.error('Error cargando movimientos:', err);
         },
         });
     }
+
 
 
   reiniciarFiltros() {
@@ -352,6 +394,12 @@ export class ReportesComponent implements OnInit {
         error: (err) => {
             console.error('Error cargando resumen:', err);
             this.error = 'Error al cargar resumen de reportes';
+            Swal.fire({
+              icon: 'error',
+              title: 'Error al cargar el resumen',
+              text: 'No se pudo obtener la información de analíticas.',
+              confirmButtonColor: '#00AEB3'
+            });
             this.cargando = false;
         },
         });
@@ -387,6 +435,12 @@ export class ReportesComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error cargando ingresos mensuales:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error cargando ingresos',
+          text: 'No se pudieron cargar los ingresos de los últimos meses.',
+          confirmButtonColor: '#00AEB3'
+        });
       }
     });
   }
@@ -438,6 +492,12 @@ export class ReportesComponent implements OnInit {
             },
             error: (err) => {
                 console.error('Error cargando ocupación semanal:', err);
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error cargando ocupación semanal',
+                  text: 'No se pudo obtener la ocupación del mes.',
+                  confirmButtonColor: '#00AEB3'
+                });
             },
             });
         }
@@ -479,6 +539,12 @@ export class ReportesComponent implements OnInit {
             },
             error: (err) => {
                 console.error('Error cargando mix de habitaciones:', err);
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error cargando mix de habitaciones',
+                  text: 'No fue posible cargar el estado actual de las habitaciones.',
+                  confirmButtonColor: '#00AEB3'
+                });
             },
             });
         }
@@ -692,6 +758,12 @@ exportarMovimientosPDF() {
 
   // Descargar
   doc.save(`reporte-movimientos-${new Date().toISOString().slice(0, 10)}.pdf`);
+  Swal.fire({
+    icon: 'success',
+    title: 'PDF generado',
+    text: 'El reporte de movimientos se descargó correctamente.',
+    confirmButtonColor: '#00AEB3'
+  });
 }
 
 }

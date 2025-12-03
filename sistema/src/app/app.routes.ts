@@ -9,6 +9,9 @@ import { AdminGuard } from './core/guards/admin.guard';
 
 // Importamos el componente de reportes
 import { ReportesComponent } from './reportes/reportes.component';
+import { inject } from '@angular/core';
+import { AuthService } from './auth.service';
+import { noCadenaGuard } from './core/guards/no-cadena.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -17,15 +20,58 @@ export const routes: Routes = [
     path: '',
     component: LayoutComponent,
     children: [
-      { path: 'dashboard', component: DashboardComponent },
-      { path: 'reservas', component: ReservasComponent, runGuardsAndResolvers: 'always' },
+      // ===== Ruta raíz para admin cadena =====
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./hoteles-admin/hoteles-admin.component').then(
+            m => m.HotelesComponent
+          ),
+        canActivate: [
+          () => {
+            const auth = inject(AuthService);
+            return auth.currentUser?.rol === 'admin_cadena';
+          }
+        ]
+      },
+
+      // ===== Ruta explícita para /hoteles-admin  =====
+      {
+        path: 'hoteles-admin',
+        loadComponent: () =>
+          import('./hoteles-admin/hoteles-admin.component').then(
+            m => m.HotelesComponent
+          ),
+        canActivate: [
+          () => {
+            const auth = inject(AuthService);
+            return auth.currentUser?.rol === 'admin_cadena';
+          }
+        ]
+      },
+      {
+        path: 'usuarios-admin-local',
+        loadComponent: () =>
+          import('./usuarios-admin-local/usuarios-admin-local.component')
+            .then(m => m.UsuariosAdminLocalComponent),
+        canActivate: [
+          () => {
+            const auth = inject(AuthService);
+            return auth.currentUser?.rol === 'admin_cadena';
+          }
+        ]
+      },
+
+      { path: 'dashboard', canActivate: [noCadenaGuard], component: DashboardComponent },
+      { path: 'reservas', canActivate: [noCadenaGuard], component: ReservasComponent, runGuardsAndResolvers: 'always' },
       // { path: 'reservas', component: ReservasComponent }, etc.
       { path: 'reservas/nueva',
             loadComponent: () =>
               import('./reservas/nueva-reserva.component')
                 .then(m => m.NuevaReservaComponent)
           },
-      { path: 'habitaciones', loadComponent: () => import('./habitaciones/habitaciones.component').then(m => m.HabitacionesComponent) },
+      { path: 'habitaciones', canActivate: [noCadenaGuard], loadComponent: () => import('./habitaciones/habitaciones.component').then(m => m.HabitacionesComponent) },
       
       // Rutas SOLO ADMIN
       {
@@ -45,14 +91,15 @@ export const routes: Routes = [
             (m) => m.UsuariosComponent
           ),
       },
-      /*{
+      {
         path: 'config-habitaciones',
         canActivate: [AdminGuard],
         loadComponent: () =>
-          import('./config-habitaciones/config-habitaciones.component').then(
-            (m) => m.ConfigHabitacionesComponent
+          import('./habitaciones-config/habitaciones-config.component').then(
+            (m) => m.HabitacionesConfigComponent
           ),
-      },*/
+      },
+      
       
 
     ],
