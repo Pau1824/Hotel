@@ -1,0 +1,32 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+
+  "services": {
+    "backend": {
+      "path": "backend",
+      "name": "hotel-erp-backend",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": "3000"
+      },
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "start": {
+        "cmd": "npm start"
+      }
+    },
+
+    "frontend": {
+      "path": "frontend",
+      "name": "hotel-erp-frontend",
+      "build": {
+        "builder": "NIXPACKS",
+        "buildCommand": "npm install && npm run build --if-present"
+      },
+      "start": {
+        "cmd": "npx serve -s dist"
+      }
+    }
+  }
+}
