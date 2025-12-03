@@ -39,8 +39,11 @@
 
         <tr *ngFor="let u of usuarios" class="border-b border-slate-100 hover:bg-slate-50 transition">
 
-          <td class="px-4 py-3 text-slate-900">{{ u.usuario }}</td>
-          <td class="px-4 py-3 text-slate-900">{{ u.nombre }} {{ u.apellido }}</td>
+          <td class="px-4 py-3 text-slate-900">{{ u.nombreusuario }}</td>
+
+          <td class="px-4 py-3 text-slate-900">
+            {{ u.primer_nombre }} {{ u.apellido }}
+          </td>
           <td class="px-4 py-3 text-slate-700">{{ u.hotel_nombre }}</td>
 
           <td class="px-4 py-3">
