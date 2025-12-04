@@ -3,6 +3,7 @@ import { NgIf, NgFor, NgClass, AsyncPipe, CurrencyPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { NgApexchartsModule, ApexChart, ApexLegend } from 'ng-apexcharts';
+import { environment } from '../environments/environment';
 
 interface ActividadItem {
   tipo: 'checkin' | 'checkout' | 'mantenimiento' | 'reserva' | 'cancelacion';
@@ -175,7 +176,7 @@ export class DashboardComponent {
 
   constructor(private http: HttpClient) {
     this.dashboard$ = this.http.get<DashboardResponse>(
-      'http://localhost:5000/api/dashboard/resumen'
+      '${environment.apiUrl}/dashboard/resumen'
     );
   }
 

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { IaHelp } from './ia-help';
+import { IaHelpComponent } from './ia-help.component';
 
-describe('IaHelp', () => {
-  let component: IaHelp;
-  let fixture: ComponentFixture<IaHelp>;
+describe('IaHelpComponent', () => {
+  let component: IaHelpComponent;
+  let fixture: ComponentFixture<IaHelpComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [IaHelp]
+      imports: [IaHelpComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(IaHelp);
+    fixture = TestBed.createComponent(IaHelpComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -7,6 +7,7 @@ import { CommonModule, NgIf,
   NgClass,
   DatePipe, } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 interface UsuarioApi {
   id_usuario: number;
@@ -44,7 +45,7 @@ interface UsuarioUI {
   ],
 })
 export class UsuariosComponent implements OnInit {
-  private API = 'http://localhost:5000/api';
+  private API = '${environment.apiUrl}';
 
   // estado actual del filtro (chips)
   estadoFiltro: 'activo' | 'inactivo' = 'activo';

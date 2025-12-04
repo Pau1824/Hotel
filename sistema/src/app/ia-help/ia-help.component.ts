@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import Swal from 'sweetalert2';
+import { environment } from '../../environments/environment';
 
 interface Mensaje {
   type: 'user' | 'assistant';
@@ -48,7 +49,7 @@ export class IaHelpComponent {
       // Llamada al backend (URL correcta)
       const resp = await firstValueFrom(
         this.http.post<any>(
-          'http://localhost:5000/api/ia/ask',
+          '${environment.apiUrl}/ia/ask',
           { pregunta: texto }
         )
       );

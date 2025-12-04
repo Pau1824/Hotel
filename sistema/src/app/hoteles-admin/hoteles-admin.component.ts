@@ -3,6 +3,7 @@ import { HttpClient } from "@angular/common/http";
 import { FormsModule } from "@angular/forms";
 import { NgFor, NgIf, NgClass } from "@angular/common";
 import Swal from "sweetalert2";
+import { environment } from '../../environments/environment';
 
 @Component({
   standalone: true,
@@ -11,7 +12,7 @@ import Swal from "sweetalert2";
   imports: [NgFor, NgIf, NgClass, FormsModule],
 })
 export class HotelesComponent implements OnInit {
-  API = "http://localhost:5000/api/cadena/hoteles";
+  API = "${environment.apiUrl}/cadena/hoteles";
 
   hoteles: any[] = [];
 
@@ -69,7 +70,7 @@ export class HotelesComponent implements OnInit {
     if (!r.isConfirmed) return;
 
     this.http.patch(
-      `http://localhost:5000/api/cadena/hoteles/${hotel.id_hotel}/estado`,
+      `${environment.apiUrl}/cadena/hoteles/${hotel.id_hotel}/estado`,
       { es_activo: nuevoEstado }
     ).subscribe({
       next: () => {

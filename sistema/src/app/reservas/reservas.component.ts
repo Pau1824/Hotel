@@ -8,6 +8,7 @@ import { ReservaDetalleComponent } from './reserva-detalle.component';
 import { ReservasService } from './reservas.service';
 import { forkJoin, Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 
 interface Reserva {
@@ -314,7 +315,7 @@ export class ReservasComponent implements OnInit, OnDestroy {
   cargarReservas() {
   console.log(" Cargando reservas...");
   
-  this.http.get<any[]>('http://localhost:5000/api/reservas').subscribe({
+  this.http.get<any[]>('${environment.apiUrl}/reservas').subscribe({
     next: (data) => {
       console.log(' Backend respondió con', data.length, 'reservas');
       console.log(' Primera reserva RAW del backend:', data[0]);
@@ -467,10 +468,10 @@ console.log("CHECK IN RAW:", r.check_in, "CHECK OUT RAW:", r.check_out);
     // Usar setTimeout para asegurar que Angular procese el cierre
     setTimeout(() => {
       forkJoin({
-        reserva: this.http.get<any>(`http://localhost:5000/api/reservas/${id}`),
-        movimientos: this.http.get<any[]>(`http://localhost:5000/api/reservas/${id}/movimientos`),
-        habitaciones: this.http.get<any[]>('http://localhost:5000/api/habitaciones'),
-        catalogo: this.http.get<any[]>(`http://localhost:5000/api/conceptos/catalogo-movimientos`)
+        reserva: this.http.get<any>(`${environment.apiUrl}/reservas/${id}`),
+        movimientos: this.http.get<any[]>(`${environment.apiUrl}/reservas/${id}/movimientos`),
+        habitaciones: this.http.get<any[]>('${environment.apiUrl}/habitaciones'),
+        catalogo: this.http.get<any[]>(`${environment.apiUrl}/conceptos/catalogo-movimientos`)
       }).subscribe({
         next: (resultado) => {
           console.log(" Todos los datos cargados:", resultado);
@@ -563,7 +564,7 @@ onCambiosReserva(actualizada: any) {
 
 
 cargarHabitaciones() {
-  this.http.get<any[]>('http://localhost:5000/api/habitaciones')
+  this.http.get<any[]>('${environment.apiUrl}/habitaciones')
     .subscribe({
       next: data => this.habitaciones = data,
       error: err => console.error("Error cargando habitaciones:", err)
@@ -646,13 +647,13 @@ refrescarDetalle() {
   if (!this.idSeleccionado) return;
 
   // 1. Recargar movimientos
-  this.http.get<any[]>(`http://localhost:5000/api/reservas/${this.idSeleccionado}/movimientos`)
+  this.http.get<any[]>(`${environment.apiUrl}/reservas/${this.idSeleccionado}/movimientos`)
     .subscribe(movs => {
       this.movimientos = movs;
     });
 
   // 2. Recargar totales/saldo
-  this.http.get<any>(`http://localhost:5000/api/reservas/${this.idSeleccionado}`)
+  this.http.get<any>(`${environment.apiUrl}/reservas/${this.idSeleccionado}`)
     .subscribe(res => {
       if (this.reservaSeleccionada) {
         this.reservaSeleccionada.totales = res.totales;

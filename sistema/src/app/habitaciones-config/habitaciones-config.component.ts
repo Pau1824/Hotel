@@ -3,6 +3,7 @@ import { CommonModule, NgFor, NgIf, NgClass, CurrencyPipe } from '@angular/commo
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../environments/environment';
 
 interface HabitacionConfig {
   id_habitacion: number;
@@ -25,7 +26,7 @@ interface HabitacionConfig {
 })
 export class HabitacionesConfigComponent implements OnInit {
 
-  private API = 'http://localhost:5000/api/habitaciones-admin';
+  private API = '${environment.apiUrl}/habitaciones-admin';
 
   cargando = signal(false);
   error = signal<string | null>(null);
@@ -80,7 +81,7 @@ export class HabitacionesConfigComponent implements OnInit {
   }
 
   cargarTipos() {
-    this.http.get<any[]>('http://localhost:5000/api/tipos-habitaciones')
+    this.http.get<any[]>('${environment.apiUrl}/tipos-habitaciones')
         .subscribe({
         next: (rows) => this.tipos.set(rows),
         error: (err) => console.error('Error cargando tipos:', err)
@@ -367,7 +368,7 @@ guardarEdicion() {
 
   this.cargando.set(true);
 
-  this.http.put(`http://localhost:5000/api/habitaciones-admin/${data.id_habitacion}`, data)
+  this.http.put(`${environment.apiUrl}/habitaciones-admin/${data.id_habitacion}`, data)
     .subscribe({
       next: () => {
         this.cargando.set(false);

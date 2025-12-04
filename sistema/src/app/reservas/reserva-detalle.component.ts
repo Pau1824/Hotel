@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ReservasService } from './reservas.service';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { environment } from '../../environments/environment';
 
 
 @Component({
@@ -363,7 +364,7 @@ private toDateOnly(str: string): string {
   }
 
   if (!this.reservaEditable.id_reservacion && !this.reservaEditable.id) {
-    console.error('⚠️ reservaEditable:', this.reservaEditable);
+    console.error('reservaEditable:', this.reservaEditable);
     alert('Error interno: la reserva no tiene ID.');
     return;
   }
@@ -596,7 +597,7 @@ private toDateOnly(str: string): string {
   const id = this.reserva.id;
 
   this.http
-    .get<any[]>(`http://localhost:5000/api/reservas/${id}/movimientos`)
+    .get<any[]>(`${environment.apiUrl}/reservas/${id}/movimientos`)
     .subscribe({
       next: (movs: any[]) => {
         console.log("Movimientos recargados desde backend:", movs);

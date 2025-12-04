@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput } from 'jspdf-autotable';
 import Swal from 'sweetalert2';
+import { environment } from '../../environments/environment';
 import {
   NgApexchartsModule,
   ApexAxisChartSeries,
@@ -117,7 +118,7 @@ type RangeKey = '7d' | '30d' | 'month';
 })
 export class ReportesComponent implements OnInit {
 
-    private API = 'http://localhost:5000/api/reportes';
+    private API = '${environment.apiUrl}/reportes';
 
     range = signal<RangeKey>('30d');
 

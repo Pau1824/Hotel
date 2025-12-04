@@ -3,6 +3,7 @@ import { FormsModule } from "@angular/forms";
 import { CommonModule, NgIf, NgFor } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import Swal from "sweetalert2";
+import { environment } from '../../environments/environment';
 
 @Component({
   standalone: true,
@@ -12,7 +13,7 @@ import Swal from "sweetalert2";
   imports: [CommonModule, FormsModule, NgIf, NgFor],
 })
 export class UsuariosAdminLocalComponent implements OnInit {
-  private API = "http://localhost:5000/api/cadena";
+  private API = "${environment.apiUrl}/cadena";
 
   hoteles: any[] = [];
   usuarios: any[] = [];

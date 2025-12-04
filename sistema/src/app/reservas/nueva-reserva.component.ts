@@ -7,6 +7,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { PLATFORM_ID} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import Swal from 'sweetalert2';
+import { environment } from '../../environments/environment';
 
 
 
@@ -310,7 +311,7 @@ get ninosExtra(): number {
 
 
   obtenerFolio() {
-  this.http.get<any>('http://localhost:5000/api/reservas/folio/siguiente')
+  this.http.get<any>('${environment.apiUrl}/reservas/folio/siguiente')
     .subscribe({
       next: (resp) => {
         console.log("Folio recibido del backend:", resp);
@@ -332,7 +333,7 @@ get ninosExtra(): number {
 
     this.obtenerFolio();
 
-    this.http.get<any[]>('http://localhost:5000/api/habitaciones').subscribe({
+    this.http.get<any[]>('${environment.apiUrl}/habitaciones').subscribe({
       next: (data) => {
         console.log(" OBJETOS HAB:", data);
         this.habitaciones.set(data.map(h => ({
@@ -378,7 +379,7 @@ get ninosExtra(): number {
 
 
   cargarHabitaciones() {
-    this.http.get<any[]>('http://localhost:5000/api/habitaciones').subscribe({
+    this.http.get<any[]>('${environment.apiUrl}/habitaciones').subscribe({
       next: (data) => {
         this.habitaciones.set(data);
       },
@@ -796,7 +797,7 @@ validarCamasExtra(): string | null {
     // -----------------------------
     // PETICIÓN AL BACKEND
     // -----------------------------
-    this.http.post('http://localhost:5000/api/reservas', payload).subscribe({
+    this.http.post('${environment.apiUrl}/reservas', payload).subscribe({
       next: (resp: any) => {
         console.log('Reserva guardada correctamente:', resp);
         Swal.fire({
