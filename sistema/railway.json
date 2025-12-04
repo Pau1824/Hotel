@@ -3,13 +3,13 @@
 
   "services": {
     "backend": {
-      "path": "sistema/backend",
+      "path": "backend",
       "name": "hotel-backend",
       "build": { "builder": "NIXPACKS" },
       "start": { "cmd": "npm start" }
     },
     "frontend": {
-      "path": "sistema/src",
+      "path": "src",
       "name": "hotel-frontend",
       "build": {
         "builder": "NIXPACKS",
