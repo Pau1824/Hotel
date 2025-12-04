@@ -1,16 +1,19 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
-
   "services": {
     "backend": {
-      "path": "backend",
       "name": "hotel-backend",
-      "build": { "builder": "NIXPACKS" },
-      "start": { "cmd": "npm start" }
+      "path": "sistema/backend",
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "start": {
+        "cmd": "npm start"
+      }
     },
     "frontend": {
-      "path": "src",
       "name": "hotel-frontend",
+      "path": "sistema",
       "build": {
         "builder": "NIXPACKS",
         "buildCommand": "npm install && npm run build"
