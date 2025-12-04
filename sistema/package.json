@@ -59,5 +59,9 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.10",
     "typescript": "~5.9.2"
+  },
+    "engines": {
+    "node": "22.x"
   }
+
 }
