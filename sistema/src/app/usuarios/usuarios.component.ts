@@ -45,7 +45,7 @@ interface UsuarioUI {
   ],
 })
 export class UsuariosComponent implements OnInit {
-  private API = '${environment.apiUrl}';
+  private API = `${environment.apiUrl}`;
 
   // estado actual del filtro (chips)
   estadoFiltro: 'activo' | 'inactivo' = 'activo';

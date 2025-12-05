@@ -13,7 +13,7 @@ import { environment } from '../../environments/environment';
   imports: [CommonModule, FormsModule, NgIf, NgFor],
 })
 export class UsuariosAdminLocalComponent implements OnInit {
-  private API = "${environment.apiUrl}/cadena";
+  private API = `${environment.apiUrl}/cadena`;
 
   hoteles: any[] = [];
   usuarios: any[] = [];

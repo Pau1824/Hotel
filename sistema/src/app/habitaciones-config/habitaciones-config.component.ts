@@ -26,7 +26,7 @@ interface HabitacionConfig {
 })
 export class HabitacionesConfigComponent implements OnInit {
 
-  private API = '${environment.apiUrl}/habitaciones-admin';
+  private API = `${environment.apiUrl}/habitaciones-admin`;
 
   cargando = signal(false);
   error = signal<string | null>(null);

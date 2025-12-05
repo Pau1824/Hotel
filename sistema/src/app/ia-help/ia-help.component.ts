@@ -49,7 +49,7 @@ export class IaHelpComponent {
       // Llamada al backend (URL correcta)
       const resp = await firstValueFrom(
         this.http.post<any>(
-          '${environment.apiUrl}/ia/ask',
+          `${environment.apiUrl}/ia/ask`,
           { pregunta: texto }
         )
       );

@@ -12,7 +12,7 @@ import { environment } from '../../environments/environment';
   imports: [NgFor, NgIf, NgClass, FormsModule],
 })
 export class HotelesComponent implements OnInit {
-  API = "${environment.apiUrl}/cadena/hoteles";
+  API = `${environment.apiUrl}/cadena/hoteles`;
 
   hoteles: any[] = [];
 

@@ -25,7 +25,7 @@ export interface CrearUsuarioDto {
 
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
-  private API = '${environment.apiUrl}/usuarios';
+  private API = `${environment.apiUrl}/usuarios`;
 
   constructor(private http: HttpClient) {}
 
