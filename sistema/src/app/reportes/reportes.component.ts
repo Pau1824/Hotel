@@ -118,7 +118,7 @@ type RangeKey = '7d' | '30d' | 'month';
 })
 export class ReportesComponent implements OnInit {
 
-    private API = '${environment.apiUrl}/reportes';
+    private API = `${environment.apiUrl}/reportes`;
 
     range = signal<RangeKey>('30d');
 
