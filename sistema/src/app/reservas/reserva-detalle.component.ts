@@ -76,7 +76,7 @@ export class ReservaDetalleComponent {
     // Si no hay reserva, no hacemos nada
     if (!this.reserva) return;
 
-    // ⚠️ Si ya tengo reservaEditable para ESTE MISMO id, no la vuelvas a pisar
+    //  Si ya tengo reservaEditable para ESTE MISMO id, no la vuelvas a pisar
     if (this.reservaEditable && this.reservaEditable.id === this.reserva.id) {
       return;
     }
@@ -400,7 +400,7 @@ private toDateOnly(str: string): string {
     return;
   }
 
-  // (si quieres, aquí puedes reactivar tus validaciones de fechas/personas)
+  
 
   this.reservasService.actualizarReserva(payload.id_reservacion, payload).subscribe({
     next: (resp: any) => {

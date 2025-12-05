@@ -315,7 +315,7 @@ export class ReservasComponent implements OnInit, OnDestroy {
   cargarReservas() {
   console.log(" Cargando reservas...");
   
-  this.http.get<any[]>('${environment.apiUrl}/reservas').subscribe({
+  this.http.get<any[]>(`${environment.apiUrl}/reservas`).subscribe({
     next: (data) => {
       console.log(' Backend respondió con', data.length, 'reservas');
       console.log(' Primera reserva RAW del backend:', data[0]);
@@ -470,7 +470,7 @@ console.log("CHECK IN RAW:", r.check_in, "CHECK OUT RAW:", r.check_out);
       forkJoin({
         reserva: this.http.get<any>(`${environment.apiUrl}/reservas/${id}`),
         movimientos: this.http.get<any[]>(`${environment.apiUrl}/reservas/${id}/movimientos`),
-        habitaciones: this.http.get<any[]>('${environment.apiUrl}/habitaciones'),
+        habitaciones: this.http.get<any[]>(`${environment.apiUrl}/habitaciones`),
         catalogo: this.http.get<any[]>(`${environment.apiUrl}/conceptos/catalogo-movimientos`)
       }).subscribe({
         next: (resultado) => {
@@ -564,7 +564,7 @@ onCambiosReserva(actualizada: any) {
 
 
 cargarHabitaciones() {
-  this.http.get<any[]>('${environment.apiUrl}/habitaciones')
+  this.http.get<any[]>(`${environment.apiUrl}/habitaciones`)
     .subscribe({
       next: data => this.habitaciones = data,
       error: err => console.error("Error cargando habitaciones:", err)

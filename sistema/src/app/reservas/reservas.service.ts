@@ -22,7 +22,7 @@ export interface CrearReservaPayload {
 })
 export class ReservasService {
   private http = inject(HttpClient);
-  private API = '${environment.apiUrl}/reservas';
+  private API = `{environment.apiUrl}/reservas`;
 
   crearReserva(payload: any) {
   return this.http.post(`${this.API}`, payload);
@@ -34,7 +34,7 @@ export class ReservasService {
   }
 
   getHabitaciones() {
-    return this.http.get<any[]>('${environment.apiUrl}/habitaciones');
+    return this.http.get<any[]>(`${environment.apiUrl}/habitaciones`);
   }
 
   obtenerTarifa(id_habitacion: number) {
@@ -53,7 +53,7 @@ export class ReservasService {
   // ESTA ES LA PARTE QUE TE FALTABA
   obtenerCatalogoMovimientos() {
     return this.http.get<any[]>(
-      '${environment.apiUrl}/conceptos/catalogo-movimientos'
+      `${environment.apiUrl}/conceptos/catalogo-movimientos`
     );
   }
 

@@ -311,7 +311,7 @@ get ninosExtra(): number {
 
 
   obtenerFolio() {
-  this.http.get<any>('${environment.apiUrl}/reservas/folio/siguiente')
+  this.http.get<any>(`${environment.apiUrl}/reservas/folio/siguiente`)
     .subscribe({
       next: (resp) => {
         console.log("Folio recibido del backend:", resp);
@@ -333,7 +333,7 @@ get ninosExtra(): number {
 
     this.obtenerFolio();
 
-    this.http.get<any[]>('${environment.apiUrl}/habitaciones').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/habitaciones`).subscribe({
       next: (data) => {
         console.log(" OBJETOS HAB:", data);
         this.habitaciones.set(data.map(h => ({
@@ -363,7 +363,6 @@ get ninosExtra(): number {
 
   verificarDisponibilidad() {
     // Ya no filtramos por fechas en el front.
-    // Solo mantenemos esto por si lo llamas en otros lados; no hace nada.
     const todosLosIds = this.habitaciones().map(h => h.id_habitacion);
     this.habitacionesDisponibles.set(todosLosIds);
   }
@@ -379,7 +378,7 @@ get ninosExtra(): number {
 
 
   cargarHabitaciones() {
-    this.http.get<any[]>('${environment.apiUrl}/habitaciones').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/habitaciones`).subscribe({
       next: (data) => {
         this.habitaciones.set(data);
       },
@@ -406,10 +405,10 @@ get ninosExtra(): number {
     const id = this.habitacionSeleccionada().id_habitacion;
     console.log(" Id seleccionado:", id);
 
-    // 🔹 Tarifa base que ya usas
+    //  Tarifa base que ya usas
     this.tarifa = Number(this.habitacionSeleccionada().tarifa_base || 0);
 
-    // 🔹 NUEVO: datos para camas extra desde la BD
+    //  NUEVO: datos para camas extra desde la BD
     this.camasExtra = 0; // reset cada que cambias de habitación
     this.camasExtraMax = Number(this.habitacionSeleccionada().camas_extra_max || 0);
     this.precioCamaExtra = Number(this.habitacionSeleccionada().precio_cama_extra || 0);
@@ -566,7 +565,6 @@ get ninosExtra(): number {
    VALIDACIONES — FRONTEND (CORREGIDAS PARA TU CÓDIGO REAL)
    ============================================================ */
 
-// 2️ REEMPLAZA completamente validarFechas() (línea ~522)
 validarFechas(): string | null {
   const llegada = this.checkIn;
   const salida = this.checkOut;
@@ -797,7 +795,7 @@ validarCamasExtra(): string | null {
     // -----------------------------
     // PETICIÓN AL BACKEND
     // -----------------------------
-    this.http.post('${environment.apiUrl}/reservas', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/reservas`, payload).subscribe({
       next: (resp: any) => {
         console.log('Reserva guardada correctamente:', resp);
         Swal.fire({
