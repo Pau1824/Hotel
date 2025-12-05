@@ -176,7 +176,7 @@ export class DashboardComponent {
 
   constructor(private http: HttpClient) {
     this.dashboard$ = this.http.get<DashboardResponse>(
-      '${environment.apiUrl}/dashboard/resumen'
+      `${environment.apiUrl}/dashboard/resumen`
     );
   }
 
