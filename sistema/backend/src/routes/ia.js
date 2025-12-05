@@ -73,7 +73,7 @@ IMPORTANTE:
         headers: {
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "http://localhost:4200",
+          "HTTP-Referer": "hotel-production-0fa8.up.railway.app",
           "X-Title": "Hotel ERP"
         }
       }
