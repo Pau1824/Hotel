@@ -81,7 +81,7 @@ export class HabitacionesConfigComponent implements OnInit {
   }
 
   cargarTipos() {
-    this.http.get<any[]>('${environment.apiUrl}/tipos-habitaciones')
+    this.http.get<any[]>(`${environment.apiUrl}/tipos-habitaciones`)
         .subscribe({
         next: (rows) => this.tipos.set(rows),
         error: (err) => console.error('Error cargando tipos:', err)
